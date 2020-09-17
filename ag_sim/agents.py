@@ -42,7 +42,7 @@ class PassiveAgent(Agent):
 
         if (self.machine.is_start):
             self.start()
-        else:
+        elif self.machine.is_end and self.random.random() < 0.2:
             self.end()
         # Better but could not get to work
         #switcher = {self.machine.start: self.start, self.machine.end : self.end}
