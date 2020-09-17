@@ -2,14 +2,18 @@ from mesa import Agent
 from statemachine import State, StateMachine
 
 class PassiveAgentStateMachine(StateMachine):
-    start = State("START", initial=True)
-    end = State("END")
+    start = State("start", initial=True)
+    end = State("end")
     transition = start.to(end)
-    reset = start._from(end)
+    reset = start.from_(end)
     # TODO: Design a sophisticated StateMachine for piece of land
 
     def on_transition(self):
         print("Hurray")
+
+class StateTracker(object):
+    def __init__(self, state):
+        self.state = state
 
 class PassiveAgent(Agent):
     grid = None
@@ -20,7 +24,8 @@ class PassiveAgent(Agent):
         super().__init__(unique_id, model)
         self.pos = pos
         self.agent_type = 'PASSIVE'
-        self.machine = PassiveAgentStateMachine()
+        self.current_state = StateTracker("start")
+        self.machine = PassiveAgentStateMachine(self.current_state)
 
     def interact(agent):
         if (agent.type == 'ACTIVE'):
@@ -32,18 +37,25 @@ class PassiveAgent(Agent):
     # TODO: implement interaction functions
 
 
-    def step(self):
+    def sample_stage(self):
         # TODO: Implement random variability in state transitions
-        switcher = {"START" : self.start, "END" : self.end}
-        func = switcher.get(self.machine.current_state, lambda: None)
-        if(func is not None):
-            func()
-    # TODO: Implement random switches of state
+
+        if (self.machine.is_start):
+            self.start()
+        else:
+            self.end()
+        # Better but could not get to work
+        #switcher = {self.machine.start: self.start, self.machine.end : self.end}
+        #func = switcher.get(state,  None)
+        #if (func is not None):
+        #    func()
+
+    # TODO: Implement switches of state with random element to it
     def start(self):
         self.machine.transition()
 
     def end(self):
-        self.machine.restart()
+        self.machine.reset()
 
 
 class ActiveAgent(Agent):
@@ -59,11 +71,12 @@ class ActiveAgent(Agent):
         self.mode = 'MOVE'
         self.current_tool = None
 
-    def step(self):
+    def sample_stage(self):
         if (self.mode == 'MOVE'):
             next_moves = self.model.grid.get_neighborhood(self.pos, True, True)
-            if (len(next_moves)>0):
-                self.model.grid.move_agent(self, next_moves[0])
+            empty_cells = [cell for cell in next_moves if self.model.grid.is_cell_empty(cell)]
+            if (empty_cells):
+                self.model.grid.move_agent(self,self.random.choice(empty_cells))
         else:
             neighbors = self.model.grid.get_neighborhood(self.pos, True, True)
             for neighbor in neighbors:
@@ -71,5 +84,3 @@ class ActiveAgent(Agent):
                 passive = [obj for obj in this_cell if isinstance(obj, PassiveAgent)]
                 if len(passive) > 0:
                     passive[0].interact(self)
-
-        
