@@ -41,3 +41,20 @@ On Windows you can use python to execute ``run.py`` script
 
 Then open your browser to [http://127.0.0.1:8521/](http://127.0.0.1:8521/) and press Reset, then Run.
 
+## TODOs
+
+# Agents
+
+* Make agents move
+* Make agents plant crops when they are near an emply clop area
+* Make agents water the crops
+* Make agents solve deseases for crops
+* Make agents fix weeds per crop
+* Make agents communicate
+
+# Crops
+
+* Add deseases
+* Add water interval
+* Make desease transferable from one crop to another
+* Add weeds chance to crops
