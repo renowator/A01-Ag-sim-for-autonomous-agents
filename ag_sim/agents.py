@@ -131,6 +131,7 @@ class ActiveAgent(Agent):
             empty_cells = [cell for cell in next_moves if self.model.grid.is_cell_empty(cell)]
             if (empty_cells):
                 self.model.grid.move_agent(self,self.random.choice(empty_cells))
+                self.mode = 'TEST'
         else:
             neighbors = self.model.grid.get_neighborhood(self.pos, True, True)
             for neighbor in neighbors:
@@ -138,3 +139,4 @@ class ActiveAgent(Agent):
                 passive = [obj for obj in cell if isinstance(obj, PassiveAgent)]
                 if len(passive) > 0:
                     passive[0].interact(self)
+                self.mode = 'MOVE'
