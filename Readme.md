@@ -58,3 +58,20 @@ Then open your browser to [http://127.0.0.1:8521/](http://127.0.0.1:8521/) and p
 * Add water interval
 * Make desease transferable from one crop to another
 * Add weeds chance to crops
+
+# Eventual simulation properties
+
+* Crop states:
+    1. Start
+    2. Baby
+    3. Growth
+    4. Flowering
+    5. Harvest
+
+* Tools:
+    1. Plowing tool
+    2. Sowing tool
+    2. Watering tool
+    3. Disease curing tool
+    4. Weed removing tool
+    5. Harvesting tool
