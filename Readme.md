@@ -61,12 +61,24 @@ Then open your browser to [http://127.0.0.1:8521/](http://127.0.0.1:8521/) and p
 
 # Eventual simulation properties
 
-* Crop states:
-    1. Start
-    2. Baby
-    3. Growth
-    4. Flowering
-    5. Harvest
+* Main soil/crop states:
+1. Start
+2. Plowed
+3. Baby
+    - Normal
+    - Sick
+    - Overgrown (with weeds)
+4. Growing
+    - Normal
+    - Sick
+    - Overgrown (with weeds)
+    - Unhappy growth
+5. Flowering
+    - Normal
+    - Sick
+    - Overgrown (with weeds)
+6. Harvestable
+7. Death
 
 * Tools:
     1. Plowing tool

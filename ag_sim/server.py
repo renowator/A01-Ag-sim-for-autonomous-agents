@@ -64,9 +64,11 @@ def ag_sim_portrayal(agent):
         portrayal["w"] = 1
         portrayal["h"] = 1
     elif type(agent) is PassiveAgent:
-        switcher = {PassiveAgentStateMachine.start: ['#abb6c6', '#abb6c6', '#abb6c6'], PassiveAgentStateMachine.baby: ["#84e184", "#adebad", "#d6f5d6"], PassiveAgentStateMachine.growth : ["#00FF00", "#00CC00", "#009900"], PassiveAgentStateMachine.flowering : ['#ffd700', '#ffd700', '#ffd700'], PassiveAgentStateMachine.harvest : ['#f5821f','#f5821f', '#f5821f'], PassiveAgentStateMachine.end: ['#abb6c6', '#abb6c6', '#abb6c6']}
-        color = switcher.get(agent.machine.current_state,   ['#008080', '#008080', '#008080'])
-        portrayal["Color"] = color
+        switcher = {agent.machine.start: ['#abb6c6', '#abb6c6', '#abb6c6'], agent.machine.plowed: ['#734b10', '#734b10', '#734b10'], agent.machine.baby: ["#84e184", "#adebad", "#d6f5d6"], agent.machine.growing : ["#00FF00", "#00CC00", "#009900"], agent.machine.flowering : ['#ffd700', '#ffd700', '#ffd700'], agent.machine.harvest : ['#f5821f','#f5821f', '#f5821f'], agent.machine.end: ['#abb6c6', '#abb6c6', '#abb6c6']}
+        color = switcher.get(agent.machine.current_state,  None)
+        portrayal["Color"] = ['#abb6c6', '#abb6c6', '#abb6c6']
+        if (color is not None):
+            portrayal["Color"] = color
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
         portrayal["Layer"] = 1
