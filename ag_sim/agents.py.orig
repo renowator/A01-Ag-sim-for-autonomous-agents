@@ -1,5 +1,6 @@
 from mesa import Agent
 from statemachine import State, StateMachine
+import random
 
 
 class PassiveAgentStateMachine(StateMachine):
@@ -80,7 +81,7 @@ class PassiveAgent(Agent):
 
     def interact(self, agent):
         if (agent.agent_type == 'ACTIVE'):
-            switcher = {'PLOW' : self.plow, 'SOW' : self.sow, 'CURE' : self.cure, 'PESTICIDES' : self.kill_weeds,
+            switcher = {'PLOW' : self.plow, 'SOW' : self.sow, 'CURE' : self.cure, 'PESTICIDES' : self.kill_weeds, 
             'WATERING_TOOL' : self.water, 'HARVESTING_TOOL' : self.harvest}
             func = switcher.get(agent.current_tool, lambda: None)
             if (func is not None):
@@ -89,40 +90,38 @@ class PassiveAgent(Agent):
     # Interaction functions for interactions between active and passive agents
     def plow(self):
         if ( self.machine.current_state == self.machine.start):
+<<<<<<< HEAD
             self.time_at_current_state = 0
-            self.machine.plow()
+            self.machine.plow_and_seed()
 
+    # Here only elements essential to the plants itself are updated (random growth of weeds or spread of disease, check if enough energy to survive, etc)
+=======
+            self.machine.plow()
+    
     def sow(self):
         if ( self.machine.current_state == self.machine.plowed):
-            self.time_at_current_state = 0
             self.machine.sow()
 
     def cure(self):
         # Baby
         if ( self.machine.current_state == self.machine.baby_sick):
-            self.time_at_current_state = 0
             self.machine.sick_baby_recovery()
         # growing
-        if ( self.machine.current_state == self.machine.growing_sick):
-            self.time_at_current_state = 0
+        if ( self.machine.current_state == self.machine.growing):
             self.machine.sick_growing_recovery()
         # Flowering
         if ( self.machine.current_state == self.machine.flowering_sick):
-            self.time_at_current_state = 0
             self.machine.sick_flowering_recovery()
 
     def kill_weeds(self):
         # Baby
         if ( self.machine.current_state == self.machine.baby_weeds):
-            self.time_at_current_state = 0
             self.machine.weeds_baby_recovery()
         # growing
         if ( self.machine.current_state == self.machine.growing_weeds):
-            self.time_at_current_state = 0
             self.machine.weeds_growing_recovery()
         # Flowering
         if ( self.machine.current_state == self.machine.flowering_weeds):
-            self.time_at_current_state = 0
             self.machine.weeds_flowering_recovery()
 
     def water(self):
@@ -132,12 +131,12 @@ class PassiveAgent(Agent):
 
     def harvest(self):
         if ( self.machine.current_state == self.machine.harvestable):
-            self.time_at_current_state = 0
             self.machine.harvest()
 
 
 
     # Here only elements essential to the plants itself are updated (random growing of weeds or spread of disease, check if enough energy to survive, etc)
+>>>>>>> b6c41ccc6b70ea720c7270ab6d8ab8d95714c85e
     def sample_stage(self):
         self.time_at_current_state += 1
         # TODO: Implement random variability in state transitions
@@ -151,10 +150,10 @@ class PassiveAgent(Agent):
         if (self.time_at_current_state >= 10):
             self.time_at_current_state = 0
             self.machine.baby_grown()
-        elif (self.random.random() < 0.001):
+        elif (self.random.random() < 0.01):
             self.time_at_current_state = 0
             self.machine.sick_baby()
-        elif (self.random.random() < 0.005):
+        elif (self.random.random() < 0.05):
             self.time_at_current_state = 0
             self.machine.weeds_baby()
 
@@ -196,7 +195,7 @@ class ActiveAgent(Agent):
         self.agent_type = 'ACTIVE'
         self.targets = None
         self.mode = 'TEST'
-        self.current_tool = self.random.choice(['PLOW', 'SOW'])
+        self.current_tool = random.choice(['PLOW'])
 
     def sample_stage(self):
         neighbors = self.model.grid.get_neighborhood(self.pos, True, True)
