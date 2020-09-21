@@ -1,11 +1,13 @@
 from collections import defaultdict
 from mesa.time import StagedActivation
+from ag_sim.agents import ActiveAgent, ActiveAgentPlanning
 
 class ActivePassiveAgentActivation(StagedActivation):
 
-    def __init__(self, model, stage_list = ["sample_stage"], shuffle = False, shuffle_between_stages = False):
+    def __init__(self, model, stage_list = ["passive_stage", "sample_stage"], shuffle = False, shuffle_between_stages = False):
         super().__init__(model, stage_list, shuffle, shuffle_between_stages)
         # TODO: Specify agent dictionary and stage parameters
+        self._plan_agents = []
 
     def add(self, agent):
         """
@@ -14,14 +16,20 @@ class ActivePassiveAgentActivation(StagedActivation):
         Args:
             agent: An Agent to be added to the schedule.
         """
-        self._agents[agent.unique_id] = agent
+        if (isinstance(agent, ActiveAgentPlanning)):
+            self._plan_agents.append(agent)
+        else:
+            self._agents[agent.unique_id] = agent
         # TODO: Add agent to appropriate dictionary
 
     def remove(self, agent):
         """
         Remove all instances of a given agent from the schedule.
         """
-        del self._agents[agent.unique_id]
+        if (isinstance(agent, ActiveAgentPlanning)):
+            self._plan_agents.remove(agent)
+        else:
+            del self._agents[agent.unique_id]
 
     def step(self):
         # TODO: implement stages: ["Active", "Passive"]
@@ -30,3 +38,5 @@ class ActivePassiveAgentActivation(StagedActivation):
             # run stage for each agent in group
             for agent_key in agent_keys:
                 getattr(self._agents[agent_key], self.stage_list[0])()
+            for agent in self._plan_agents:
+                getattr(agent, self.stage_list[0])()

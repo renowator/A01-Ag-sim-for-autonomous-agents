@@ -197,18 +197,43 @@ class ActiveAgent(Agent):
         self.targets = None
         self.mode = 'TEST'
         self.current_tool = self.random.choice(['PLOW', 'SOW'])
-
-    def sample_stage(self):
+        self.plan = None
+    '''
+    def passive_stage(self):
         neighbors = self.model.grid.get_neighborhood(self.pos, True, True)
         for neighbor in neighbors:
             neighbor_obj = self.model.grid.get_cell_list_contents([neighbor])
             if (len(neighbor_obj) > 0):
                 if isinstance(neighbor_obj[0], PassiveAgent):
                     self.model.knowledgeMap.update(PassiveAgentPerception(neighbor_obj[0]))
-        if (self.mode == 'MOVE'):
+        my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
+        my_plans.sort(key=lambda x: x.steps_left, reverse=False)
+        plan_count = len(my_plans)
+        if plan_count > 0:
+            furthest_plan = my_plans[plan_count-1]
+            self.plan = my_plans[0]
+        else:
+            furthest_plan = ActiveAgentPlanning(self, self.pos, 0)
+        for i in range(5-len(plan_count)):
+            grid_at_state = self.model.knowledgeMap.getGridStateAtStep(furthest_plan.steps_left)
+            neighbors = grid_at_state.get_neighborhood(furthest_plan.pos , True, True)
             empty_cells = [cell for cell in neighbors if self.model.grid.is_cell_empty(cell)]
-            if (empty_cells):
-                self.model.grid.move_agent(self,self.random.choice(empty_cells))
+            if len(empty_cells > 0):
+                choice = self.random.choice(empty_cells)
+                new_plan = ActiveAgentPlanning(self, choice.pos, furthest_plan.steps_left+1)
+                self.AgentKnowledgeMap.update(new_plan)
+                furthest_plan = new_plan
+    '''
+
+
+    def sample_stage(self):
+        neighbors = self.model.grid.get_neighborhood(self.pos, True, False)
+        my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
+        my_plans.sort(key=lambda x: x.steps_left, reverse=False)
+        plan_count = len(my_plans)
+        if (self.mode == 'MOVE'):
+            if plan_count > 0 and self.model.grid.is_cell_empty(my_plans[0].pos):
+                self.model.grid.move_agent(self,my_plans[0].pos)
                 self.mode = 'TEST'
         else:
             for neighbor in neighbors:
@@ -217,6 +242,31 @@ class ActiveAgent(Agent):
                 if len(passive) > 0:
                     passive[0].interact(self)
             self.mode = 'MOVE'
+        # This stage is for merely testing everything
+        neighbors = self.model.grid.get_neighborhood(self.pos, True, False, 5)
+        for neighbor in neighbors:
+            neighbor_obj = self.model.grid.get_cell_list_contents([neighbor])
+            if (len(neighbor_obj) > 0):
+                if isinstance(neighbor_obj[0], PassiveAgent):
+                    self.model.knowledgeMap.update(PassiveAgentPerception(neighbor_obj[0]))
+        if plan_count > 0:
+            furthest_plan = my_plans[plan_count-1]
+            self.plan = my_plans[0]
+        else:
+            furthest_plan = ActiveAgentPlanning(self, self.pos, 0)
+        for i in range(5-plan_count):
+            grid_at_state = self.model.knowledgeMap.getGridStateAtStep(furthest_plan.steps_left)
+            neighbors = grid_at_state.get_neighborhood(furthest_plan.pos , True, True)
+            empty_cells = [cell for cell in neighbors if grid_at_state.is_cell_empty(cell)]
+            if len(empty_cells) > 0:
+                choice = self.random.choice(empty_cells)
+                new_plan = ActiveAgentPlanning(self, choice, furthest_plan.steps_left+1)
+                self.model.knowledgeMap.update(new_plan)
+                self.model.schedule.add(new_plan)
+                if new_plan.steps_left == 1:
+                    self.plan = new_plan
+                furthest_plan = new_plan
+
 
 
 # This class is used to post agent plan on the AgentKnowledgeMap.planGrid
@@ -231,3 +281,5 @@ class ActiveAgentPlanning(Agent):
         self.steps_left -= 1
         if (self.steps_left < 0):
             self.model.schedule.remove(self)
+            self.model.knowledgeMap.planGrid.remove_agent(self)
+            self.model.knowledgeMap.planAgents[self.unique_id].remove(self)

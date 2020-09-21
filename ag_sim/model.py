@@ -3,8 +3,7 @@ from mesa.space import SingleGrid, MultiGrid
 from mesa.datacollection import DataCollector
 from ag_sim.schedule import ActivePassiveAgentActivation
 from ag_sim.agents import ActiveAgent, PassiveAgent, PassiveAgentPerception, ActiveAgentPlanning
-
-
+from collections import defaultdict
 
 
 class AgentKnowledgeMap():
@@ -12,16 +11,36 @@ class AgentKnowledgeMap():
     def __init__(self, height, width):
         self.navigationGrid = SingleGrid(height, width, False)
         self.planGrid = MultiGrid(height, width, False)
+        self.planAgents = defaultdict(list)
+        self.perceptionAgents = {}
 
     def update(self, agent):
         if (isinstance(agent, ActiveAgentPlanning)):
             self.planGrid.place_agent(agent, agent.pos)
+            self.planAgents.setdefault(agent.unique_id, [])
+            self.planAgents[agent.unique_id].append(agent)
         elif(isinstance(agent, PassiveAgentPerception)):
                 if self.navigationGrid.is_cell_empty(agent.pos):
                     self.navigationGrid.place_agent(agent, agent.pos)
+                    self.perceptionAgents[agent.unique_id] = agent
                 else:
                     existing_agent = self.navigationGrid.get_cell_list_contents(agent.pos)[0]
                     existing_agent.update(agent.state, agent.time_at_current_state)
+
+
+    def getGridStateAtStep(self, step = 0):
+        plan_agent_keys = [uid for uid, a in self.planAgents.items()]
+        perception_agent_keys = [uid for uid, a in self.perceptionAgents.items()]
+        navGridAtStep = SingleGrid(self.navigationGrid.height , self.navigationGrid.width, False)
+        for key in perception_agent_keys:
+            navGridAtStep.place_agent(self.perceptionAgents[key], self.perceptionAgents[key].pos)
+        for key in plan_agent_keys:
+            for agent in self.planAgents[key]:
+                if agent.steps_left == step and navGridAtStep.is_cell_empty(agent.pos):
+                    navGridAtStep.place_agent(agent, agent.pos)
+        return navGridAtStep
+
+
 
 
 
