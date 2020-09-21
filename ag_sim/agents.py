@@ -1,6 +1,7 @@
 from mesa import Agent
 from statemachine import State, StateMachine
 
+
 class PassiveAgentStateMachine(StateMachine):
     # All Possible states of a soil patch
     start = State("start", initial=True)
@@ -77,6 +78,7 @@ class PassiveAgent(Agent):
     # TODO: implement interaction functions (interaction functions are what the active agent does to the soil)
     def plow(self):
         if ( self.machine.current_state == self.machine.start):
+            self.time_at_current_state = 0
             self.machine.plow_and_seed()
 
     # Here only elements essential to the plants itself are updated (random growth of weeds or spread of disease, check if enough energy to survive, etc)
@@ -109,6 +111,21 @@ class PassiveAgent(Agent):
     def when_harvest(self):
         return
 
+# This class is used to track PassiveObjects on the AgentKnowledgeMap.navigationGrid
+class PassiveAgentPerception(Agent):
+    # The perception object will have the unique id same as the actual PassiveObject
+    def __init__(self, agent):
+        super().__init__(agent.unique_id, agent.model)
+        self.pos = agent.pos
+        if isinstance(agent, PassiveAgent):
+            self.state = agent.machine.current_state
+            self.time_at_current_state = agent.time_at_current_state
+
+    def update(self, state = None, time_at_current_state = 0):
+        if (state is not None):
+            self.state = state
+            self.time_at_current_state = time_at_current_state
+
 
 
 
@@ -126,17 +143,35 @@ class ActiveAgent(Agent):
         self.current_tool = 'PLOW'
 
     def sample_stage(self):
+        neighbors = self.model.grid.get_neighborhood(self.pos, True, True)
+        for neighbor in neighbors:
+            neighbor_obj = self.model.grid.get_cell_list_contents([neighbor])
+            if (len(neighbor_obj) > 0):
+                if isinstance(neighbor_obj[0], PassiveAgent):
+                    self.model.knowledgeMap.update(PassiveAgentPerception(neighbor_obj[0]))
         if (self.mode == 'MOVE'):
-            next_moves = self.model.grid.get_neighborhood(self.pos, True, True)
-            empty_cells = [cell for cell in next_moves if self.model.grid.is_cell_empty(cell)]
+            empty_cells = [cell for cell in neighbors if self.model.grid.is_cell_empty(cell)]
             if (empty_cells):
                 self.model.grid.move_agent(self,self.random.choice(empty_cells))
                 self.mode = 'TEST'
         else:
-            neighbors = self.model.grid.get_neighborhood(self.pos, True, True)
             for neighbor in neighbors:
                 cell = self.model.grid.get_cell_list_contents([neighbor])
                 passive = [obj for obj in cell if isinstance(obj, PassiveAgent)]
                 if len(passive) > 0:
                     passive[0].interact(self)
-                self.mode = 'MOVE'
+            self.mode = 'MOVE'
+
+
+# This class is used to post agent plan on the AgentKnowledgeMap.planGrid
+class ActiveAgentPlanning(Agent):
+    # The plan will have a unique id of the agent who made the plan
+    def __init__(self, agent, pos, steps = 0):
+        super().__init__(agent.unique_id, agent.model)
+        self.pos = pos
+        self.steps_left = steps
+
+    def sample_stage(self):
+        self.steps_left -= 1
+        if (self.steps_left < 0):
+            self.model.schedule.remove(self)

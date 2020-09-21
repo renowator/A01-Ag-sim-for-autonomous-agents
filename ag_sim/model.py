@@ -1,8 +1,30 @@
 from mesa import Model
-from mesa.space import SingleGrid
+from mesa.space import SingleGrid, MultiGrid
 from mesa.datacollection import DataCollector
 from ag_sim.schedule import ActivePassiveAgentActivation
-from ag_sim.agents import ActiveAgent, PassiveAgent
+from ag_sim.agents import ActiveAgent, PassiveAgent, PassiveAgentPerception, ActiveAgentPlanning
+
+
+
+
+class AgentKnowledgeMap():
+
+    def __init__(self, height, width):
+        self.navigationGrid = SingleGrid(height, width, False)
+        self.planGrid = MultiGrid(height, width, False)
+
+    def update(self, agent):
+        if (isinstance(agent, ActiveAgentPlanning)):
+            self.planGrid.place_agent(agent, agent.pos)
+        elif(isinstance(agent, PassiveAgentPerception)):
+                if self.navigationGrid.is_cell_empty(agent.pos):
+                    self.navigationGrid.place_agent(agent, agent.pos)
+                else:
+                    existing_agent = self.navigationGrid.get_cell_list_contents(agent.pos)[0]
+                    existing_agent.update(agent.state, agent.time_at_current_state)
+
+
+
 
 class AgSimulator(Model):
     height = 50
@@ -24,7 +46,7 @@ class AgSimulator(Model):
                 "Y": lambda a: a.pos[1]
             })
         # TODO: Create and object to serve as common knowledge base for active agents
-
+        self.knowledgeMap = AgentKnowledgeMap(self.height, self.width)
         # TODO: Agents need to be created and added to the schedule here
         for i in range(self.active_agents):
             agent = ActiveAgent(self.next_id(), (0,i), self )
