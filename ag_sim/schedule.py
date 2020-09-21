@@ -6,7 +6,6 @@ class ActivePassiveAgentActivation(StagedActivation):
     def __init__(self, model, stage_list = ["sample_stage"], shuffle = False, shuffle_between_stages = False):
         super().__init__(model, stage_list, shuffle, shuffle_between_stages)
         # TODO: Specify agent dictionary and stage parameters
-        
 
     def add(self, agent):
         """
