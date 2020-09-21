@@ -231,17 +231,14 @@ class ActiveAgent(Agent):
         my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
         my_plans.sort(key=lambda x: x.steps_left, reverse=False)
         plan_count = len(my_plans)
-        if (self.mode == 'MOVE'):
+        if (self.mode == 'TEST'):
             if plan_count > 0 and self.model.grid.is_cell_empty(my_plans[0].pos):
                 self.model.grid.move_agent(self,my_plans[0].pos)
-                self.mode = 'TEST'
-        else:
             for neighbor in neighbors:
                 cell = self.model.grid.get_cell_list_contents([neighbor])
                 passive = [obj for obj in cell if isinstance(obj, PassiveAgent)]
                 if len(passive) > 0:
                     passive[0].interact(self)
-            self.mode = 'MOVE'
         # This stage is for merely testing everything
         neighbors = self.model.grid.get_neighborhood(self.pos, True, False, 5)
         for neighbor in neighbors:
@@ -254,9 +251,9 @@ class ActiveAgent(Agent):
             self.plan = my_plans[0]
         else:
             furthest_plan = ActiveAgentPlanning(self, self.pos, 0)
-        for i in range(5-plan_count):
-            grid_at_state = self.model.knowledgeMap.getGridStateAtStep(furthest_plan.steps_left)
-            neighbors = grid_at_state.get_neighborhood(furthest_plan.pos , True, True)
+        for i in range(6-plan_count):
+            grid_at_state = self.model.knowledgeMap.getGridStateAtStep(furthest_plan.steps_left+1)
+            neighbors = grid_at_state.get_neighborhood(furthest_plan.pos , True, False)
             empty_cells = [cell for cell in neighbors if grid_at_state.is_cell_empty(cell)]
             if len(empty_cells) > 0:
                 choice = self.random.choice(empty_cells)

@@ -80,8 +80,8 @@ def ag_sim_portrayal(agent):
         portrayal["w"] = 1
         portrayal["h"] = 1
     elif type(agent) is ActiveAgentPlanning:
-        switcher = {0: ['#97649e', '#97649e', '#97649e'], 1: ['#aa68af', '#aa68af', '#aa68af'], 2: ["#bd6dc1", "#bd6dc1", "#bd6dc1"], 3 : ["#cf72d2", "#cf72d2", "#cf72d2"], 4 : ['#e276e4', '#e276e4', '#e276e4'],5 : ['#f57bf5','#f57bf5', '#f57bf5']}
-        color = switcher.get(agent.steps_left,   ['#008080', '#008080', '#008080'])
+        switcher = {0: ['#97649e', '#97649e', '#97649e'], 1: ['#aa68af', '#aa68af', '#aa68af'], 2: ["#bd6dc1", "#bd6dc1", "#bd6dc1"], 3 : ["#cf72d2", "#cf72d2", "#cf72d2"], 4 : ['#e276e4', '#e276e4', '#e276e4'],5 : ['#f57bf5','#f57bf5', '#f57bf5'], 6:['#ea317b','#ea317b','#ea317b']}
+        color = switcher.get(agent.steps_left,   ['#ea317b','#ea317b','#ea317b'])
         portrayal["Color"] = color
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
