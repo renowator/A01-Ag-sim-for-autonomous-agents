@@ -1,7 +1,18 @@
 from mesa import Agent
 from statemachine import State, StateMachine
 
+'''
+*** PassiveAgentStateMachine to be used by PassiveAgent.
+***  - Interact directly through calling transitions
+***  - Schematics will be given in the report
 
+*** Each PassiveAgent instance creates its own instance of PassiveAgentStateMachine
+*** Transitions are made by the Agents
+
++++ May incorporate water level and utilize on_'transition' functions
++++ Group states according to various parameters: there are weeds in the grid spot, there is disease in the grid spot;
+    Or group by states (baby) (growing) (flowering) (harvest)
+'''
 class PassiveAgentStateMachine(StateMachine):
     # All Possible states of a soil patch
     # Start
@@ -64,8 +75,17 @@ class PassiveAgentStateMachine(StateMachine):
 
 
 
-
-
+'''
+*** PassiveAgent implements the agent functionality for a piece of soil in Ag AgSimulator
+*** Mesa Agent functionality with StagedActivation (currently a single sample_stage)
+*** Interaction function with ActiveAgent defined and called through:
+                          PassiveAgent.interact(calling_active_agent)
+*** The staged updates only the independent transitions in PassiveObjectStateMachine eg.:
+                          - Random element Transitions
+                          - Death of the crop due to its states
+                          - Developing into next stage if conditions met
++++ May be extended to a particular kind of crop if needed
+'''
 class PassiveAgent(Agent):
     grid = None
     x = None
@@ -167,7 +187,16 @@ class PassiveAgent(Agent):
     def when_harvest(self):
         return
 
-# This class is used to track PassiveObjects on the AgentKnowledgeMap.navigationGrid
+
+'''
+*** PassiveAgentPerception is used to track PassiveObjects on the AgentKnowledgeMap.navigationGrid
+*** Placed on AgentKnowledgeMap.navigationGrid by ActiveAgent instances when they see new objects using:
+              - AgentKnowledgeMap.update() is called by ActiveAgent
+              IF object at this location does not exist:
+                    - Place PassiveObjectPerception on AgentKnowledgeMap.navigationGrid
+              ELSE:
+                    - PassiveAgentPerception.update() is called by AgentKnowledgeMap.update()
+'''
 class PassiveAgentPerception(Agent):
     # The perception object will have the unique id same as the actual PassiveObject
     def __init__(self, agent):
@@ -184,7 +213,18 @@ class PassiveAgentPerception(Agent):
 
 
 
+'''
+*** ActiveAgent represents the robotic agent that operates on the farm
+*** Currently sample_stage is used to test functionality of the rest of the project
 
++++ Implement Perception in passive stage
++++ Obtain targets from AgentKnowledgeMap.taskGrid
++++ Attach A* algorithm for finding distance to tasks
++++ Implement Object Sorting Task in passive stage
++++ Record the plan and update AgentKnowledgeMap.navigationGrid in passive stage
++++ Execute the plan and interact with PassiveObjects in active stage
+
+'''
 class ActiveAgent(Agent):
     grid = None
     x = None
@@ -265,7 +305,11 @@ class ActiveAgent(Agent):
                 furthest_plan = new_plan
 
 
-
+'''
+*** ActiveAgentPlanning is an object which represents a plan of a particular ActiveAgentPlanning
+*** Place on AgentKnowledgeMap.planGrid
+*** Expires when particular stage is reached through sample_stage -> passive_stage
+'''
 # This class is used to post agent plan on the AgentKnowledgeMap.planGrid
 class ActiveAgentPlanning(Agent):
     # The plan will have a unique id of the agent who made the plan

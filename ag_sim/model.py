@@ -5,7 +5,19 @@ from ag_sim.schedule import ActivePassiveAgentActivation
 from ag_sim.agents import ActiveAgent, PassiveAgent, PassiveAgentPerception, ActiveAgentPlanning
 from collections import defaultdict
 
+'''
+*** AgentKnowledgeMap is a common knowledge object for ActiveAgents to update during passive_stage
+*** AgentKnowledgeMap.navigationGrid:
+                                        Tracks all the objects seen by ActiveAgents
+*** AgentKnowledgeMap.planGrid:
+                                        Tracks the plans for ActiveAgents
++++ AgentKnowledgeMap.targetGrid:
+                                        Tracks the targets using AgentKnowledgeMap.navigationGrid
 
+
+*** AgentKnowledgeMap.getGridStateAtStep(step):
+                                         Will return the snticipated state of grid based on planGrid    
+'''
 class AgentKnowledgeMap():
 
     def __init__(self, height, width):
