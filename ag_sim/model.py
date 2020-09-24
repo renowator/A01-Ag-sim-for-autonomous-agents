@@ -2,7 +2,7 @@ from mesa import Model
 from mesa.space import SingleGrid, MultiGrid
 from mesa.datacollection import DataCollector
 from ag_sim.schedule import ActivePassiveAgentActivation
-from ag_sim.agents import ActiveAgent, PassiveAgent, PassiveAgentPerception, ActiveAgentPlanning
+from ag_sim.agents import ActiveAgent, PassiveAgent, PassiveAgentPerception, ActiveAgentPlanning, FarmAgent
 from collections import defaultdict
 
 '''
@@ -131,6 +131,9 @@ class AgSimulator(Model):
                 agent = PassiveAgent(self.next_id(), (n*2 - 1, j+1), self)
                 self.grid.place_agent(agent, (n*2 - 1, j+1))
                 self.schedule.add(agent)
+        agent = FarmAgent(self.next_id(), (47,48), self) 
+        self.grid.place_agent(agent, (47,48))
+        self.schedule.add(agent)
 
         self.running = True
         self.datacollector.collect(self)

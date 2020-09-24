@@ -371,3 +371,36 @@ class ActiveAgentPlanning(Agent):
             self.model.schedule.remove(self)
             self.model.knowledgeMap.planGrid.remove_agent(self)
             self.model.knowledgeMap.planAgents[self.unique_id].remove(self)
+
+class FarmAgent(Agent):
+    grid = None
+    x = None
+    y = None
+
+    def __init__(self, unique_id, pos, model):
+        super().__init__(unique_id, model)
+        self.pos = pos
+        self.food = 0
+        self.irrigator = 5
+        self.plow = 5
+        self.spray = 5
+
+    def interact(target, tool): #for the taking and returning of farm equipment
+        if tool != None:
+            if tool == 'irrigator':
+                self.irrigator += 1
+            elif tool == 'plow':
+                self.plow += 1
+            elif tool == 'spray':
+                self.spray += 1
+        elif target == 'watering' and self.irrigator > 0:
+            self.irrigator -= 1
+            return True
+        elif target == 'plowing' and self.plow > 0:
+            self.plow -= 1
+            return True
+        elif target == 'spraying' and self.spray > 0:
+            self.spray -= 1
+            return True
+        else:
+            return False

@@ -3,7 +3,7 @@ from mesa.visualization.modules import CanvasGrid, ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 from collections import defaultdict
 from ag_sim.model import AgSimulator
-from ag_sim.agents import PassiveAgent, ActiveAgent, PassiveAgentPerception, ActiveAgentPlanning, PassiveAgentStateMachine
+from ag_sim.agents import PassiveAgent, ActiveAgent, PassiveAgentPerception, ActiveAgentPlanning, PassiveAgentStateMachine, FarmAgent
 
 
 '''
@@ -65,6 +65,13 @@ def ag_sim_portrayal(agent):
     portrayal = {}
     if agent is None:
         portrayal["Color"] = ["#D18F52", "#D18F52", "#D18F52"]
+        portrayal["Shape"] = "rect"
+        portrayal["Filled"] = "true"
+        portrayal["Layer"] = 1
+        portrayal["w"] = 1
+        portrayal["h"] = 1
+    elif type(agent) is FarmAgent:
+        portrayal["Color"] = ["#000000", "#000000", "#000000"]
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
         portrayal["Layer"] = 1
