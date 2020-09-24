@@ -272,7 +272,7 @@ class ActiveAgent(Agent):
         super().__init__(unique_id, model)
         self.pos = pos
         self.agent_type = 'ACTIVE'
-        self.targets = None
+        self.targets = None # target can be watering, plowing, spraying and to gather or return the needed equipment
         self.mode = 'TEST'
         self.current_tool = self.random.choice(['PLOW', 'SOW'])
         self.plan = None
@@ -313,6 +313,7 @@ class ActiveAgent(Agent):
     *** All the below functionality will be divided in passive_stage and active_stage
     !!!!              NOTE:: There are some bugs in here
     '''
+
     def sample_stage(self):
         neighbors = self.model.grid.get_neighborhood(self.pos, True, False)
         my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
@@ -372,6 +373,30 @@ class ActiveAgentPlanning(Agent):
             self.model.knowledgeMap.planGrid.remove_agent(self)
             self.model.knowledgeMap.planAgents[self.unique_id].remove(self)
 
+
+# this function should be inserted somewhere, where 'cell' is a neighbouring cell of an active agent
+# 'self.' will be the active agent
+
+# if isinstance(cell, FarmAgent) and self.current_tool != None:
+#     if self.target == 'get_plow':
+#         if cell.interact(self.target, None):
+#             self.current_tool = 'plow'
+#         else:
+#             None #there is no tool available so change plans
+#     elif self.target == 'get_irrigator':
+#         if cell.interact(self.target, None):
+#             self.current_tool = 'irrigator'
+#         else:
+#             None #there is no tool available so change plans
+#     elif self.target == 'get_spray':
+#         if cell.interact(self.target, None):
+#             self.current_tool = 'spray'
+#         else:
+#             None #there is no tool available so change plans
+#     elif self.target == 'return_tool':
+#         cell.interact(self.target, self.current_tool)
+#         self.current_tool = None
+
 class FarmAgent(Agent):
     grid = None
     x = None
@@ -389,10 +414,13 @@ class FarmAgent(Agent):
         if tool != None:
             if tool == 'irrigator':
                 self.irrigator += 1
+                return True
             elif tool == 'plow':
                 self.plow += 1
+                return True
             elif tool == 'spray':
                 self.spray += 1
+                return True
         elif target == 'watering' and self.irrigator > 0:
             self.irrigator -= 1
             return True
