@@ -5,6 +5,13 @@ from collections import defaultdict
 from ag_sim.model import AgSimulator
 from ag_sim.agents import PassiveAgent, ActiveAgent, PassiveAgentPerception, ActiveAgentPlanning, PassiveAgentStateMachine
 
+
+'''
+*** AgSimGrid is a visualizer class for AgSimulator
+*** It visualizes the Model.grid as well as the knowledgeMap of Agents
+*** CanvasGrid.render is overriden to loop through more grids, nothing else
+*** Refer to CanvasGrid
+'''
 class AgSimGrid(CanvasGrid):
     def __init__(self,portrayal_method,grid_width,grid_height,canvas_width=500,canvas_height=500):
         super().__init__(portrayal_method, grid_width,grid_height*2, canvas_width, canvas_height*2)
@@ -53,7 +60,7 @@ class AgSimGrid(CanvasGrid):
 
         return grid_state
 
-
+# How colors for the agents are determined
 def ag_sim_portrayal(agent):
     portrayal = {}
     if agent is None:
@@ -101,6 +108,7 @@ def ag_sim_portrayal(agent):
 
 canvas = AgSimGrid(ag_sim_portrayal, 50, 50, 500, 500)
 
+# The parameters that can be changed in the browser are defined here
 model_params = {
     "active_agents": UserSettableParameter("slider", "Number of active agents", 5, 1, 20)
 }

@@ -91,6 +91,19 @@ class PassiveAgent(Agent):
     x = None
     y = None
 
+    '''
+    *** Constructor:
+        Inputs:
+               - unique id for PassiveAgent
+               - position of PassiveAgent
+               - Inherent model of PassiveAgent (AgSimulator)
+
+        Actions:
+                - Call constructor from Agent on unique_id and model
+                - Initialize agent_type as 'PASSIVE'
+                - Construct and store PassiveAgentStateMachine
+
+    '''
     def __init__(self, unique_id, pos, model):
         super().__init__(unique_id, model)
         self.pos = pos
@@ -98,6 +111,12 @@ class PassiveAgent(Agent):
         self.machine = PassiveAgentStateMachine()
         self.time_at_current_state = 0
 
+    '''
+    *** Main interaction function between ActiveAgent and PassiveAgent
+    *** ActiveAgent calls PassiveAgent.interact(calling_active_agent) to change the state of PassiveAgent
+    *** switcher dictionary determines which particular function to run depending on ActiveAgent current_tool
+    *** Interaction functions defined below (subject to change)
+    '''
     def interact(self, agent):
         if (agent.agent_type == 'ACTIVE'):
             switcher = {'PLOW' : self.plow, 'SOW' : self.sow, 'CURE' : self.cure, 'PESTICIDES' : self.kill_weeds,
@@ -106,7 +125,7 @@ class PassiveAgent(Agent):
             if (func is not None):
                 func()
 
-    # Interaction functions for interactions between active and passive agents
+    #----------------------------------- Interaction functions for interactions between active and passive agents
     def plow(self):
         if ( self.machine.current_state == self.machine.start):
             self.time_at_current_state = 0
@@ -154,9 +173,14 @@ class PassiveAgent(Agent):
         if ( self.machine.current_state == self.machine.harvestable):
             self.time_at_current_state = 0
             self.machine.harvest()
+    # ******************               THE INTERACTION FUNCTIONS END HERE             *******************
 
-
-
+    '''
+    *** sample_Stage is the stage used to debug the model
+    *** It will not be used eventually
+    *** All the below functionality will be in passive_stage
+    *** Indepentent state transitions for PassiveAgents only
+    '''
     # Here only elements essential to the plants itself are updated (random growing of weeds or spread of disease, check if enough energy to survive, etc)
     def sample_stage(self):
         self.time_at_current_state += 1
@@ -166,7 +190,7 @@ class PassiveAgent(Agent):
         if (func is not None):
             func()
 
-    # TODO: Implement switches of state with random element to it
+    # ---------------------------------------- Independent transitions start here
     def when_baby(self):
         if (self.time_at_current_state >= 10):
             self.time_at_current_state = 0
@@ -186,7 +210,7 @@ class PassiveAgent(Agent):
 
     def when_harvest(self):
         return
-
+    # ******************               THE INDEPENDENT TRANSITIONS END HERE             *******************
 
 '''
 *** PassiveAgentPerception is used to track PassiveObjects on the AgentKnowledgeMap.navigationGrid
@@ -230,6 +254,20 @@ class ActiveAgent(Agent):
     x = None
     y = None
 
+
+    '''
+    *** Constructor:
+        Inputs:
+               - unique id for ActiveAgent
+               - position of ActiveAgent
+               - Inherent model of ActiveAgent (AgSimulator)
+
+        Actions:
+                - Call constructor from Agent on unique_id and model
+                - Initialize agent_type as 'ACTIVE'
+                + More functionality to be implemented for decision making and path planning
+
+    '''
     def __init__(self, unique_id, pos, model):
         super().__init__(unique_id, model)
         self.pos = pos
@@ -238,7 +276,11 @@ class ActiveAgent(Agent):
         self.mode = 'TEST'
         self.current_tool = self.random.choice(['PLOW', 'SOW'])
         self.plan = None
+
+
     '''
+    # JUST LEAVE THAT HERE FOR NOW
+    # This is a template on how to update the knowledgeMap in passive_stage
     def passive_stage(self):
         neighbors = self.model.grid.get_neighborhood(self.pos, True, True)
         for neighbor in neighbors:
@@ -265,7 +307,12 @@ class ActiveAgent(Agent):
                 furthest_plan = new_plan
     '''
 
-
+    '''
+    *** sample_Stage is the stage used to debug the model
+    *** It will not be used eventually
+    *** All the below functionality will be divided in passive_stage and active_stage
+    !!!!              NOTE:: There are some bugs in here
+    '''
     def sample_stage(self):
         neighbors = self.model.grid.get_neighborhood(self.pos, True, False)
         my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
