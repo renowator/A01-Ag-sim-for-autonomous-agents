@@ -195,18 +195,22 @@ class PassiveAgent(Agent):
         if (self.time_at_current_state >= 10):
             self.time_at_current_state = 0
             self.machine.baby_grown()
-        elif (self.random.random() < 0.001):
+        elif (self.random.random() < 0.01):
             self.time_at_current_state = 0
             self.machine.sick_baby()
-        elif (self.random.random() < 0.005):
+        elif (self.random.random() < 0.01):
             self.time_at_current_state = 0
             self.machine.weeds_baby()
 
     def when_growing(self):
-        return
+        if (self.time_at_current_state >= 10):
+            self.time_at_current_state = 0
+            self.machine.growing_to_flowering()
 
     def when_flowering(self):
-        return
+        if (self.time_at_current_state >= 10):
+            self.time_at_current_state = 0
+            self.machine.ready_to_harvest()
 
     def when_harvest(self):
         return

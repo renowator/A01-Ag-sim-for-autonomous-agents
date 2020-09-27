@@ -1,5 +1,5 @@
 from mesa.visualization.ModularVisualization import ModularServer
-from mesa.visualization.modules import CanvasGrid, ChartModule
+from mesa.visualization.modules import CanvasGrid, ChartModule, TextElement
 from mesa.visualization.UserParam import UserSettableParameter
 from collections import defaultdict
 from ag_sim.model import AgSimulator
@@ -64,7 +64,7 @@ class AgSimGrid(CanvasGrid):
 def ag_sim_portrayal(agent):
     portrayal = {}
     if agent is None:
-        portrayal["Color"] = ["#D18F52", "#D18F52", "#D18F52"]
+        portrayal["Color"] = ["#d4ccbe", "#d4ccbe", "#d4ccbe"]
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
         portrayal["Layer"] = 1
@@ -78,7 +78,31 @@ def ag_sim_portrayal(agent):
         portrayal["w"] = 1
         portrayal["h"] = 1
     elif type(agent) is PassiveAgent:
-        switcher = {PassiveAgentStateMachine.start: ['#abb6c6', '#abb6c6', '#abb6c6'], PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'], PassiveAgentStateMachine.baby: ["#84e184", "#adebad", "#d6f5d6"], PassiveAgentStateMachine.growing : ["#00FF00", "#00CC00", "#009900"], PassiveAgentStateMachine.flowering : ['#ffd700', '#ffd700', '#ffd700'], PassiveAgentStateMachine.harvest : ['#f5821f','#f5821f', '#f5821f'], PassiveAgentStateMachine.end: ['#abb6c6', '#abb6c6', '#abb6c6']}
+        # Tints for sick and weeds states
+        sick_tint = "#0043fc" # Blue
+        weeds_tint = "#ff00f2" # Pink
+        switcher = {
+            # Start state colors
+            PassiveAgentStateMachine.start: ['#8f713c', '#8f713c', '#8f713c'], # light brown
+            # Plowed state colors
+            PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'], # dark brown
+            # Baby state colors
+            PassiveAgentStateMachine.baby: ["#84e184", "#adebad", "#d6f5d6"], # light green
+            PassiveAgentStateMachine.baby_sick: ["#84e184", "#adebad", sick_tint],
+            PassiveAgentStateMachine.baby_weeds: ["#84e184", "#adebad", weeds_tint],
+            # Growing state colors
+            PassiveAgentStateMachine.growing : ["#00FF00", "#00CC00", "#009900"], # dark green
+            PassiveAgentStateMachine.growing_sick : ["#00FF00", "#00CC00", sick_tint],
+            PassiveAgentStateMachine.growing_weeds : ["#00FF00", "#00CC00", weeds_tint],
+            # Flowering state colors
+            PassiveAgentStateMachine.flowering : ['#fffd73', '#faf743', '#f7f416'], # yellow
+            PassiveAgentStateMachine.flowering_sick : ['#fffd73', '#faf743', sick_tint],
+            PassiveAgentStateMachine.flowering_weeds : ['#fffd73', '#faf743', weeds_tint],
+            # Harvestable state colors
+            PassiveAgentStateMachine.harvestable : ['#ffd06b','#ffc240', '#ffb10a'], # Orange
+            # End state colors
+            PassiveAgentStateMachine.end: ['#abb6c6', '#abb6c6', '#abb6c6']
+            }
         color = switcher.get(agent.machine.current_state,  ['#abb6c6', '#abb6c6', '#abb6c6'])
         portrayal["Color"] = color
         portrayal["Shape"] = "rect"
@@ -88,11 +112,10 @@ def ag_sim_portrayal(agent):
         portrayal["h"] = 1
     elif type(agent) is ActiveAgent:
         portrayal["Color"] = ["#FF3300", "#FF3300", "#FF3300"]
-        portrayal["Shape"] = "rect"
+        portrayal["Shape"] = "circle"
         portrayal["Filled"] = "true"
         portrayal["Layer"] = 1
-        portrayal["w"] = 1
-        portrayal["h"] = 1
+        portrayal["r"] = 1
     elif type(agent) is ActiveAgentPlanning:
         switcher = {0: ['#97649e', '#97649e', '#97649e'], 1: ['#aa68af', '#aa68af', '#aa68af'], 2: ["#bd6dc1", "#bd6dc1", "#bd6dc1"], 3 : ["#cf72d2", "#cf72d2", "#cf72d2"], 4 : ['#e276e4', '#e276e4', '#e276e4'],5 : ['#f57bf5','#f57bf5', '#f57bf5'], 6:['#ea317b','#ea317b','#ea317b']}
         color = switcher.get(agent.steps_left,   ['#ea317b','#ea317b','#ea317b'])
@@ -113,12 +136,46 @@ def ag_sim_portrayal(agent):
         portrayal["h"] = 1
     return portrayal
 
+# Class for representing the legend
+class ag_sim_legend(TextElement):
+    def __init__(self):
+        self.legend_dict = {
+            "Farm" : "#000000",
+            "Active farming agent" : "#FF3300",
+            "Road" : "#d4ccbe",
+            "Starting field" : "#8f713c",
+            "Plowed field" : "#734b10",
+            "Baby crop" : "#adebad",
+            "Growing crop" : "#00CC00",
+            "Flowering crop": "#faf743",
+            "Harvestable crop" : "#ffc240",
+            "Infected with weeds" : "#ff00f2",
+            "Sick" : "#0043fc",
+            "Death crop" : "#000000"
+        }
+
+    def create_legend_row(self, name, color):
+        return "<li><div class='input-color'><input type='text' value='" + name + "' disabled/><div class='color-box' style='background-color: " + color + ";'></div></div></li>"
+
+    def render(self, model):
+        css = "<style>ul{} .input-color {position: relative; margin:0px;}.input-color input {padding-left: 20px; font-size:small;}.input-color .color-box {width: 10px;height: 10px; margin-top: 7px; display: inline-block;background-color: #ccc;position: absolute;left: 5px;top: 5px;}</style>"
+        
+        all_legend_rows = ""
+        for name, color in self.legend_dict.items():
+            all_legend_rows += self.create_legend_row(name, color)
+        
+        return css + "<ul>" + all_legend_rows + "</ul>"
+
+
 canvas = AgSimGrid(ag_sim_portrayal, 50, 50, 500, 500)
+
+# Create the legend
+legend = ag_sim_legend()
 
 # The parameters that can be changed in the browser are defined here
 model_params = {
-    "active_agents": UserSettableParameter("slider", "Number of active agents", 5, 1, 20)
+    "active_agents": UserSettableParameter("slider", "Number of active agents", 5, 1, 20),
 }
 
-server = ModularServer(AgSimulator, [canvas], "Agriculture Simulation", model_params)
+server = ModularServer(AgSimulator, [canvas, legend], "Agriculture Simulation", model_params)
 server.port = 8521
