@@ -410,7 +410,10 @@ class FarmAgent(Agent):
         self.plow = 5
         self.spray = 5
 
-    def interact(target, tool): #for the taking and returning of farm equipment
+    def sample_stage(self):
+        return
+
+    def interact(self, target, tool): #for the taking and returning of farm equipment
         if tool != None:
             if tool == 'irrigator':
                 self.irrigator += 1
