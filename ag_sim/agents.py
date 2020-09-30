@@ -69,7 +69,7 @@ class PassiveAgentStateMachine(StateMachine):
     weeds_flowering_recovery = flowering_weeds.to(flowering)
     weeds_flowering_death = flowering_weeds.to(end)
     # Harvestable state transitions
-    ready_to_harvest = flowering.to(harvestable)
+    flowering_to_harvestable = flowering.to(harvestable)
     harvest = harvestable.to(end)
     # We can add functions for transitions here
 
@@ -104,12 +104,29 @@ class PassiveAgent(Agent):
                 - Construct and store PassiveAgentStateMachine
 
     '''
-    def __init__(self, unique_id, pos, model):
+    def __init__(self, unique_id, pos, model, **model_params):
         super().__init__(unique_id, model)
         self.pos = pos
         self.agent_type = 'PASSIVE'
         self.machine = PassiveAgentStateMachine()
         self.time_at_current_state = 0
+
+        # Set passive agent's baby crop parameters
+        self.baby_sick_probability = model_params["baby_sick_probability"]
+        self.baby_weeds_probability = model_params["baby_weeds_probability"]
+        self.steps_baby_to_growing = model_params["steps_baby_to_growing"]
+        # Set passive agent's growing crop parameters
+        self.growing_sick_probability = model_params["growing_sick_probability"]
+        self.growing_weeds_probability = model_params["growing_weeds_probability"]
+        self.steps_growing_to_flowering = model_params["steps_growing_to_flowering"]
+        # Set passive agent's flowering crop parameters
+        self.flowering_sick_probability = model_params["flowering_sick_probability"]
+        self.flowering_weeds_probability = model_params["flowering_weeds_probability"]
+        self.steps_flowering_to_harvestable = model_params["steps_flowering_to_harvestable"]
+        # Set passive agent's harvestable crop parameters
+        #  ------> Should they be able to get sick / weeds when harvestable?
+        self.harvestable_sick_probability = model_params["harvestable_sick_probability"]
+        self.harvestable_weeds_probability = model_params["harvestable_weeds_probability"]
 
     '''
     *** Main interaction function between ActiveAgent and PassiveAgent
@@ -185,34 +202,53 @@ class PassiveAgent(Agent):
     def sample_stage(self):
         self.time_at_current_state += 1
         # TODO: Implement random variability in state transitions
-        switcher = {self.machine.baby: self.when_baby, self.machine.growing : self.when_growing, self.machine.flowering : self.when_flowering, self.machine.harvest : self.when_harvest}
+        switcher = {self.machine.baby: self.when_baby, self.machine.growing : self.when_growing, self.machine.flowering : self.when_flowering, self.machine.harvest : self.when_harvestable}
         func = switcher.get(self.machine.current_state,  None)
         if (func is not None):
             func()
 
     # ---------------------------------------- Independent transitions start here
+
+    '''
+    Independent baby state transitions
+    '''
     def when_baby(self):
-        if (self.time_at_current_state >= 10):
+        if (self.time_at_current_state >= self.steps_baby_to_growing):
             self.time_at_current_state = 0
             self.machine.baby_grown()
-        elif (self.random.random() < 0.01):
-            self.time_at_current_state = 0
+        elif (self.random.random() < self.baby_sick_probability):
+            # self.time_at_current_state = 0 ---> Is this needed?
             self.machine.sick_baby()
-        elif (self.random.random() < 0.01):
-            self.time_at_current_state = 0
+        elif (self.random.random() < self.baby_weeds_probability):
+            # self.time_at_current_state = 0
             self.machine.weeds_baby()
 
+    '''
+    Independent growing state transitions
+    '''
     def when_growing(self):
-        if (self.time_at_current_state >= 10):
+        if (self.time_at_current_state >= self.steps_growing_to_flowering):
             self.time_at_current_state = 0
             self.machine.growing_to_flowering()
+        elif (self.random.random() < self.growing_sick_probability):
+            # self.time_at_current_state = 0
+            self.machine.sick_growing()
+        elif (self.random.random() < self.growing_weeds_probability):
+            # self.time_at_current_state = 0
+            self.machine.weeds_growing()
 
     def when_flowering(self):
-        if (self.time_at_current_state >= 10):
+        if (self.time_at_current_state >= self.steps_flowering_to_harvestable):
             self.time_at_current_state = 0
-            self.machine.ready_to_harvest()
+            self.machine.flowering_to_harvestable()
+        elif (self.random.random() < self.flowering_sick_probability):
+            # self.time_at_current_state = 0
+            self.machine.sick_flowering()
+        elif (self.random.random() < self.flowering_weeds_probability):
+            # self.time_at_current_state = 0
+            self.machine.weeds_flowering()
 
-    def when_harvest(self):
+    def when_harvestable(self):
         return
     # ******************               THE INDEPENDENT TRANSITIONS END HERE             *******************
 

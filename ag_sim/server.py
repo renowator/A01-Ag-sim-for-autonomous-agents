@@ -174,7 +174,24 @@ legend = ag_sim_legend()
 
 # The parameters that can be changed in the browser are defined here
 model_params = {
+
+    "static_text" : UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
     "active_agents": UserSettableParameter("slider", "Number of active agents", 5, 1, 20),
+    # Baby crop parameters
+    "baby_sick_probability": UserSettableParameter("number", "Probability of baby getting sick", 0.01, 0, 1),
+    "baby_weeds_probability": UserSettableParameter("number", "Probability of baby getting weeds", 0.01, 0, 1),
+    "steps_baby_to_growing": UserSettableParameter("number", "Steps between a crop's baby and growing state", 20, 1, 1000),
+    # Growing crop parameters
+    "growing_sick_probability": UserSettableParameter("number", "Probability of growing getting sick", 0.01, 0, 1),
+    "growing_weeds_probability": UserSettableParameter("number", "Probability of growing getting weeds", 0.01, 0, 1),
+    "steps_growing_to_flowering": UserSettableParameter("number", "Steps between a crop's growing and flowering state", 20, 1, 1000),
+    # Flowering crop parameters
+    "flowering_sick_probability": UserSettableParameter("number", "Probability of flowering getting sick", 0.01, 0, 1),
+    "flowering_weeds_probability": UserSettableParameter("number", "Probability of flowering getting weeds", 0.01, 0, 1),
+    "steps_flowering_to_harvestable": UserSettableParameter("number", "Steps between a crop's flowering and harvestable state", 20, 1, 1000),
+    # Harvestable crop parameters
+    "harvestable_sick_probability": UserSettableParameter("number", "Probability of harvestable getting sick", 0.01, 0, 1),
+    "harvestable_weeds_probability": UserSettableParameter("number", "Probability of harvestable getting weeds", 0.01, 0, 1),
 }
 
 server = ModularServer(AgSimulator, [canvas, legend], "Agriculture Simulation", model_params)
