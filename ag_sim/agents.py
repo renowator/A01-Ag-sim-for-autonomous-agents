@@ -1,5 +1,39 @@
 from mesa import Agent
 from statemachine import State, StateMachine
+import ag_sim.schedule
+from queue import PriorityQueue
+import astar
+
+# Heuristic needed for movement cost to the goal
+def heuristic(a, b):
+    v1 = abs(a[1]-b[1])
+    v2 = abs(a[0]-b[0])
+    temp = v1+(v2*v2)
+    return temp
+
+
+# Using this function for adding an element in the "queue" at the appropriate position
+def prioritizeQueue(queue,element):
+    check = 0
+    while check == 0:
+        length = len(queue)
+        if length == 0:
+            queue.insert(0,element)
+            break
+        else:
+            while length >= 0:
+                length -= 1
+                if element[0] > queue[length][0]:
+                    queue.insert(length+1, element)
+                    check = 1
+                    break
+        
+        if check == 0:
+            queue.insert(0,element)
+            break
+
+    return queue
+        
 
 '''
 *** PassiveAgentStateMachine to be used by PassiveAgent.
@@ -73,8 +107,6 @@ class PassiveAgentStateMachine(StateMachine):
     harvest = harvestable.to(end)
     # We can add functions for transitions here
 
-
-
 '''
 *** PassiveAgent implements the agent functionality for a piece of soil in Ag AgSimulator
 *** Mesa Agent functionality with StagedActivation (currently a single sample_stage)
@@ -110,19 +142,23 @@ class PassiveAgent(Agent):
         self.agent_type = 'PASSIVE'
         self.machine = PassiveAgentStateMachine()
         self.time_at_current_state = 0
+        self.taken = 0
 
         # Set passive agent's baby crop parameters
         self.baby_sick_probability = model_params["baby_sick_probability"]
         self.baby_weeds_probability = model_params["baby_weeds_probability"]
         self.steps_baby_to_growing = model_params["steps_baby_to_growing"]
+
         # Set passive agent's growing crop parameters
         self.growing_sick_probability = model_params["growing_sick_probability"]
         self.growing_weeds_probability = model_params["growing_weeds_probability"]
         self.steps_growing_to_flowering = model_params["steps_growing_to_flowering"]
+
         # Set passive agent's flowering crop parameters
         self.flowering_sick_probability = model_params["flowering_sick_probability"]
         self.flowering_weeds_probability = model_params["flowering_weeds_probability"]
         self.steps_flowering_to_harvestable = model_params["steps_flowering_to_harvestable"]
+        
         # Set passive agent's harvestable crop parameters
         #  ------> Should they be able to get sick / weeds when harvestable?
         self.harvestable_sick_probability = model_params["harvestable_sick_probability"]
@@ -252,6 +288,8 @@ class PassiveAgent(Agent):
         return
     # ******************               THE INDEPENDENT TRANSITIONS END HERE             *******************
 
+    def returnState(self):
+        return self.machine
 '''
 *** PassiveAgentPerception is used to track PassiveObjects on the AgentKnowledgeMap.navigationGrid
 *** Placed on AgentKnowledgeMap.navigationGrid by ActiveAgent instances when they see new objects using:
@@ -266,14 +304,16 @@ class PassiveAgentPerception(Agent):
     def __init__(self, agent):
         super().__init__(agent.unique_id, agent.model)
         self.pos = agent.pos
+        self.taken = 0
         if isinstance(agent, PassiveAgent):
             self.state = agent.machine.current_state
             self.time_at_current_state = agent.time_at_current_state
 
-    def update(self, state = None, time_at_current_state = 0):
+    def update(self, state = None, time_at_current_state = 0, taken = 0):
         if (state is not None):
             self.state = state
             self.time_at_current_state = time_at_current_state
+            self.taken = taken
 
 
 
@@ -314,8 +354,9 @@ class ActiveAgent(Agent):
         self.agent_type = 'ACTIVE'
         self.targets = None # target can be watering, plowing, spraying and to gather or return the needed equipment
         self.mode = 'TEST'
-        self.current_tool = self.random.choice(['PLOW', 'SOW'])
+        self.current_tool = 'PLOW'
         self.plan = None
+        self.target = None # This variable is used when a target location is set by the agent
 
 
     '''
@@ -355,43 +396,80 @@ class ActiveAgent(Agent):
     '''
 
     def sample_stage(self):
-        neighbors = self.model.grid.get_neighborhood(self.pos, True, False)
+        
         my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
         my_plans.sort(key=lambda x: x.steps_left, reverse=False)
         plan_count = len(my_plans)
-        if (self.mode == 'TEST'):
-            if plan_count > 0 and self.model.grid.is_cell_empty(my_plans[0].pos):
-                self.model.grid.move_agent(self,my_plans[0].pos)
-            for neighbor in neighbors:
-                cell = self.model.grid.get_cell_list_contents([neighbor])
-                passive = [obj for obj in cell if isinstance(obj, PassiveAgent)]
-                if len(passive) > 0:
-                    passive[0].interact(self)
-        # This stage is for merely testing everything
+
+        # Add what the agent sees to the knowledge grid
         neighbors = self.model.grid.get_neighborhood(self.pos, True, False, 5)
         for neighbor in neighbors:
             neighbor_obj = self.model.grid.get_cell_list_contents([neighbor])
             if (len(neighbor_obj) > 0):
                 if isinstance(neighbor_obj[0], PassiveAgent):
                     self.model.knowledgeMap.update(PassiveAgentPerception(neighbor_obj[0]))
-        if plan_count > 0:
-            furthest_plan = my_plans[plan_count-1]
-            self.plan = my_plans[0]
-        else:
-            furthest_plan = ActiveAgentPlanning(self, self.pos, 0)
-        for i in range(6-plan_count):
-            grid_at_state = self.model.knowledgeMap.getGridStateAtStep(furthest_plan.steps_left+1)
-            neighbors = grid_at_state.get_neighborhood(furthest_plan.pos , True, False)
-            empty_cells = [cell for cell in neighbors if grid_at_state.is_cell_empty(cell)]
-            if len(empty_cells) > 0:
-                choice = self.random.choice(empty_cells)
-                new_plan = ActiveAgentPlanning(self, choice, furthest_plan.steps_left+1)
-                self.model.knowledgeMap.update(new_plan)
-                self.model.schedule.add(new_plan)
-                if new_plan.steps_left == 1:
-                    self.plan = new_plan
-                furthest_plan = new_plan
 
+        # If the agent still has "moves" to do, do those moves
+        if plan_count > 0:
+            self.model.grid.move_agent(self,my_plans[0].pos)
+        else:
+            # If the agent has a target, check if the target is in the neighborhood
+            # TODO: Check the neighborhood only for top/bottom/left/right and exclude corners
+            #       It works without this right now because of the prior if statement check
+            if self.target is not None:
+                neighbors = self.model.grid.get_neighborhood(self.pos, True, False)
+                for neighbor in neighbors:
+                    cell = self.model.grid.get_cell_list_contents([neighbor])
+                    passive = [obj for obj in cell if isinstance(obj, PassiveAgent)]
+                    if len(passive) > 0 and passive[0].pos == self.target:
+                        passive[0].interact(self)
+                        passive[0].taken = 0
+                        self.target = None
+                        break
+
+            # Get all fields that the agents added in the perception map
+            listOfFieldsFromKnowledge = [obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
+            queue = list()
+            for obj in listOfFieldsFromKnowledge:
+                pointOfInterest = self.model.schedule.getPassiveAgent(obj.unique_id)
+                queue = prioritizeQueue(queue,(heuristic(pointOfInterest.pos,self.pos) ,pointOfInterest))
+
+            # Decide which is the closest point you can attend and that is free
+            while queue:
+                possibleTarget = queue.pop(0)
+                near = list()
+
+                # In here we calculate all possible points the agent can go
+                # It depends where the PassiveAgent is located and there are some special cases
+                # like the line on the right or the top/bottom of each line (as there are 3 spots the agent can go)
+                if possibleTarget[1].taken == 0 and possibleTarget[1].machine.current_state.value == "start":
+                    possibleTarget[1].taken = 1
+                    self.target = possibleTarget[1].pos
+
+                    # These are the two possible locations for every field
+                    near.append((possibleTarget[1].pos[0]-1,possibleTarget[1].pos[1]))
+                    near.append((possibleTarget[1].pos[0]+1,possibleTarget[1].pos[1]))
+
+                    # If there is a top or bottom field, there is also an alternitve point it can go
+                    if possibleTarget[1].pos[1] == 1:
+                        near.append((possibleTarget[1].pos[0],0))
+                    elif possibleTarget[1].pos[1] == 48:
+                        near.append((possibleTarget[1].pos[0],49))
+
+                    # Calculate the shortest path based on agents point and the other possible points
+                    steps = astar.solve(self.pos,near)
+
+                    temp = 0
+                    if steps:
+                        for step in steps:
+                            temp = temp + 1
+                            new_plan = ActiveAgentPlanning(self, step, temp)
+                            self.model.knowledgeMap.update(new_plan)
+                            self.model.schedule.add(new_plan)
+
+                    near.clear()
+                    queue.clear()
+                    break
 
 '''
 *** ActiveAgentPlanning is an object which represents a plan of a particular ActiveAgentPlanning

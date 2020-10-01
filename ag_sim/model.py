@@ -111,7 +111,7 @@ class AgSimulator(Model):
 
         # Set all model parameters from **model_params; 
         # second value is the default for when the requested parameter is not set
-        self.active_agents = model_params.get("active_agents", 5)
+        self.active_agents = model_params.get("active_agents", 1)
 
         # Create the schedule
         self.schedule = ActivePassiveAgentActivation(self, ["sample_stage"], False, False)
@@ -138,7 +138,7 @@ class AgSimulator(Model):
             self.schedule.add(agent)
 
         # Add the passive agents (land, crops)
-        for n in range(int(self.width/2) - 1):
+        for n in range(1,int(self.width/2) - 1):
             for j in range(self.height-2):
                 agent = PassiveAgent(self.next_id(), (n*2 - 1, j+1), self, **model_params)
                 self.grid.place_agent(agent, (n*2 - 1, j+1))

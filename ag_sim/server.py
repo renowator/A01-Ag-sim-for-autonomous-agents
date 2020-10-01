@@ -176,7 +176,7 @@ legend = ag_sim_legend()
 model_params = {
 
     "static_text" : UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
-    "active_agents": UserSettableParameter("slider", "Number of active agents", 5, 1, 20),
+    "active_agents": UserSettableParameter("slider", "Number of active agents", 1, 1, 20),
     # Baby crop parameters
     "baby_sick_probability": UserSettableParameter("number", "Probability of baby getting sick", 0.01, 0, 1),
     "baby_weeds_probability": UserSettableParameter("number", "Probability of baby getting weeds", 0.01, 0, 1),
