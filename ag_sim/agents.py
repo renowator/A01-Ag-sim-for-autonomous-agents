@@ -158,7 +158,7 @@ class PassiveAgent(Agent):
         self.flowering_sick_probability = model_params["flowering_sick_probability"]
         self.flowering_weeds_probability = model_params["flowering_weeds_probability"]
         self.steps_flowering_to_harvestable = model_params["steps_flowering_to_harvestable"]
-        
+
         # Set passive agent's harvestable crop parameters
         #  ------> Should they be able to get sick / weeds when harvestable?
         self.harvestable_sick_probability = model_params["harvestable_sick_probability"]
@@ -459,6 +459,7 @@ class ActiveAgent(Agent):
                     # Calculate the shortest path based on agents point and the other possible points
                     steps = astar.solve(self.pos,near)
 
+                    # If there are any steps that the agent can take, add them to the knowledgeMap
                     temp = 0
                     if steps:
                         for step in steps:
