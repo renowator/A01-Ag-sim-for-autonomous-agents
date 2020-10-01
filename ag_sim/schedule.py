@@ -40,3 +40,6 @@ class ActivePassiveAgentActivation(StagedActivation):
                 getattr(self._agents[agent_key], self.stage_list[0])()
             for agent in self._plan_agents:
                 getattr(agent, self.stage_list[0])()
+
+    def getPassiveAgent(self, id):
+        return self._agents[id]
