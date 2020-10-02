@@ -27,13 +27,13 @@ def prioritizeQueue(queue,element):
                     queue.insert(length+1, element)
                     check = 1
                     break
-        
+
         if check == 0:
             queue.insert(0,element)
             break
 
     return queue
-        
+
 
 '''
 *** PassiveAgentStateMachine to be used by PassiveAgent.
@@ -388,6 +388,17 @@ class ActiveAgent(Agent):
                 furthest_plan = new_plan
     '''
 
+
+    def update_perception(self, perceptionRadius = 5):
+        # Add what the agent sees to the knowledge grid
+        neighbors = self.model.grid.get_neighborhood(self.pos, True, False, perceptionRadius)
+        for neighbor in neighbors:
+            neighbor_obj = self.model.grid.get_cell_list_contents([neighbor])
+            if (len(neighbor_obj) > 0):
+                if isinstance(neighbor_obj[0], PassiveAgent):
+                    self.model.knowledgeMap.update(PassiveAgentPerception(neighbor_obj[0]))
+
+
     '''
     *** sample_Stage is the stage used to debug the model
     *** It will not be used eventually
@@ -396,19 +407,21 @@ class ActiveAgent(Agent):
     '''
 
     def sample_stage(self):
-        
+        self.model.knowledgeMap.getGridAtStepAsNumpyArray(10)
         my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
         my_plans.sort(key=lambda x: x.steps_left, reverse=False)
         plan_count = len(my_plans)
 
         # Add what the agent sees to the knowledge grid
+        '''
         neighbors = self.model.grid.get_neighborhood(self.pos, True, False, 5)
         for neighbor in neighbors:
             neighbor_obj = self.model.grid.get_cell_list_contents([neighbor])
             if (len(neighbor_obj) > 0):
                 if isinstance(neighbor_obj[0], PassiveAgent):
                     self.model.knowledgeMap.update(PassiveAgentPerception(neighbor_obj[0]))
-
+        '''
+        self.update_perception()
         # If the agent still has "moves" to do, do those moves
         if plan_count > 0:
             self.model.grid.move_agent(self,my_plans[0].pos)

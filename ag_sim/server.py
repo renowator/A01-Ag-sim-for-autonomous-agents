@@ -159,11 +159,11 @@ class ag_sim_legend(TextElement):
 
     def render(self, model):
         css = "<style>ul{} .input-color {position: relative; margin:0px;}.input-color input {padding-left: 20px; font-size:small;}.input-color .color-box {width: 10px;height: 10px; margin-top: 7px; display: inline-block;background-color: #ccc;position: absolute;left: 5px;top: 5px;}</style>"
-        
+
         all_legend_rows = ""
         for name, color in self.legend_dict.items():
             all_legend_rows += self.create_legend_row(name, color)
-        
+
         return css + "<ul>" + all_legend_rows + "</ul>"
 
 
@@ -194,5 +194,5 @@ model_params = {
     "harvestable_weeds_probability": UserSettableParameter("number", "Probability of harvestable getting weeds", 0.01, 0, 1),
 }
 
-server = ModularServer(AgSimulator, [canvas, legend], "Agriculture Simulation", model_params)
+server = ModularServer(AgSimulator, [ legend, canvas], "Agriculture Simulation", model_params)
 server.port = 8521

@@ -4,6 +4,7 @@ from mesa.datacollection import DataCollector
 from ag_sim.schedule import ActivePassiveAgentActivation
 from ag_sim.agents import ActiveAgent, PassiveAgent, PassiveAgentPerception, ActiveAgentPlanning, FarmAgent
 from collections import defaultdict
+import numpy
 
 '''
 *** AgentKnowledgeMap is a common knowledge object for ActiveAgents to update during passive_stage
@@ -30,11 +31,14 @@ class AgentKnowledgeMap():
                + Construct taskGrid
                - Create agent dictionaries
     '''
-    def __init__(self, height, width):
+    def __init__(self, height, width, model):
         self.navigationGrid = SingleGrid(height, width, False)
         self.planGrid = MultiGrid(height, width, False)
         self.planAgents = defaultdict(list)
         self.perceptionAgents = {}
+        self.model = model
+        agent = FarmAgent(0, self.model.farmPos, self)
+        self.navigationGrid.place_agent(agent, self.model.farmPos)
 
 
     '''
@@ -76,6 +80,29 @@ class AgentKnowledgeMap():
         return navGridAtStep
 
 
+    def getGridAtStepAsNumpyArray(self, step = 0):
+        plan_agent_keys = [uid for uid, a in self.planAgents.items()]
+        perception_agent_keys = [uid for uid, a in self.perceptionAgents.items()]
+        return_numpy_array = numpy.zeros((self.navigationGrid.width, self.navigationGrid.height) , dtype = 'int8')
+        for key in perception_agent_keys:
+            return_numpy_array[self.perceptionAgents[key].pos[1], self.perceptionAgents[key].pos[0]] = 1
+        for agent_key in self.planAgents:
+            agent_plans = self.planAgents[agent_key]
+            if len(agent_plans) > 0 and len(agent_plans) < step:
+                for plan in agent_plans:
+                    if plan.steps_left == step:
+                        return_numpy_array[plan.pos[1], plan.pos[0]] = 1
+            elif len(agent_plans) == 0:
+                active_agent = self.model.schedule.getPassiveAgent(agent_key)
+                return_numpy_array[active_agent.pos[1], active_agent.pos[0]] = 1
+            else:
+                return_numpy_array[agent_plans[-1].pos[1], agent_plans[-1].pos[0]] = 1
+        return_numpy_array[self.model.farmPos[1], self.model.farmPos[0]] = 1
+        print(return_numpy_array[::-1])
+        return return_numpy_array[::-1]
+
+
+
 
 
 
@@ -109,10 +136,10 @@ class AgSimulator(Model):
     def __init__(self, height = 50, width = 50, **model_params):
         super().__init__()
 
-        # Set all model parameters from **model_params; 
+        # Set all model parameters from **model_params;
         # second value is the default for when the requested parameter is not set
         self.active_agents = model_params.get("active_agents", 1)
-
+        self.farmPos = (47,48)
         # Create the schedule
         self.schedule = ActivePassiveAgentActivation(self, ["sample_stage"], False, False)
 
@@ -128,7 +155,7 @@ class AgSimulator(Model):
             })
 
         # TODO: Create and object to serve as common knowledge base for active agents
-        self.knowledgeMap = AgentKnowledgeMap(self.height, self.width)
+        self.knowledgeMap = AgentKnowledgeMap(self.height, self.width, self)
 
         # TODO: Agents need to be created and added to the schedule here
         # Add the active agents (farming robots)
@@ -145,8 +172,8 @@ class AgSimulator(Model):
                 self.schedule.add(agent)
 
         # Add the farm agent
-        agent = FarmAgent(self.next_id(), (47,48), self) 
-        self.grid.place_agent(agent, (47,48))
+        agent = FarmAgent(self.next_id(), self.farmPos, self)
+        self.grid.place_agent(agent, self.farmPos)
         self.schedule.add(agent)
 
         self.running = True
