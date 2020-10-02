@@ -179,6 +179,8 @@ model_params = {
 
     "static_text" : UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
     "active_agents": UserSettableParameter("slider", "Number of active agents", 1, 1, 20),
+    # Water
+    "water_threshold": UserSettableParameter("number", "Water threshold for when crops start drying out out (0-100)", 20, 0, 100),
     # Baby crop parameters
     "baby_sick_probability": UserSettableParameter("number", "Probability of baby getting sick", 0.01, 0, 1),
     "baby_weeds_probability": UserSettableParameter("number", "Probability of baby getting weeds", 0.01, 0, 1),

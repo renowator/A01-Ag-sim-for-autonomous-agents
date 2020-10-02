@@ -57,20 +57,22 @@ class PassiveAgentStateMachine(StateMachine):
     baby = State("baby")
     baby_sick = State("baby_sick")
     baby_weeds = State("baby_weeds")
+    baby_dry = State("baby_dry")
     # Growing
     growing = State("growing")
     growing_sick = State("growing_sick")
     growing_weeds = State("growing_weeds")
-    unhappy_growing = State("unhappy_growing")
+    growing_dry = State("growing_dry")
     #Flowering
     flowering = State("flowering")
     flowering_sick = State("flowering_sick")
     flowering_weeds = State("flowering_weeds")
+    flowering_dry = State("flowering_dry")
     # Harvestable
     harvestable = State("harvestable")
     end = State("end")
     # State groups
-    waterable_states = (baby, baby_sick, baby_weeds, growing, growing_sick, growing_weeds, unhappy_growing, flowering, flowering_sick, flowering_weeds)
+    waterable_states = (baby, baby_sick, baby_weeds, growing, growing_sick, growing_weeds, flowering, flowering_sick, flowering_weeds)
 
     # All possible transitions of a soil patch
     # Start state transitions
@@ -84,6 +86,9 @@ class PassiveAgentStateMachine(StateMachine):
     weeds_baby = baby.to(baby_weeds)
     weeds_baby_recovery = baby_weeds.to(baby)
     weeds_baby_death = baby_weeds.to(end)
+    dry_baby = baby.to(baby_dry)
+    dry_baby_recovery = baby_dry.to(baby)
+    dry_baby_death = baby_dry.to(end)
     baby_grown = baby.to(growing)
     # Growing state transitions
     sick_growing = growing.to(growing_sick)
@@ -92,8 +97,9 @@ class PassiveAgentStateMachine(StateMachine):
     weeds_growing = growing.to(growing_weeds)
     weeds_growing_recovery = growing_weeds.to(growing)
     weeds_growing_death = growing_weeds.to(end)
-    low_nutrition = growing.to(unhappy_growing)
-    death_from_low_nutrition = unhappy_growing.to(end)
+    dry_growing = growing.to(growing_dry)
+    dry_growing_recovery = growing_dry.to(growing)
+    dry_growing_death = growing_dry.to(end)
     growing_to_flowering = growing.to(flowering)
     # Flowering state transitions
     sick_flowering = flowering.to(flowering_sick)
@@ -102,8 +108,11 @@ class PassiveAgentStateMachine(StateMachine):
     weeds_flowering = flowering.to(flowering_weeds)
     weeds_flowering_recovery = flowering_weeds.to(flowering)
     weeds_flowering_death = flowering_weeds.to(end)
-    # Harvestable state transitions
+    dry_flowering = flowering.to(flowering_dry)
+    dry_flowering_recovery = flowering_dry.to(flowering)
+    dry_flowering_death = flowering_dry.to(end)
     flowering_to_harvestable = flowering.to(harvestable)
+    # Harvestable state transitions
     harvest = harvestable.to(end)
     # We can add functions for transitions here
 
@@ -144,6 +153,11 @@ class PassiveAgent(Agent):
         self.time_at_current_state = 0
         self.taken = 0
 
+        # Water level of the crop [0-100]. Initialized at 50 when seed is planted.
+        # Crops will start to die whenever water_level is below water_threshold
+        self.water_level = 0
+        self.water_threshold = model_params["water_threshold"]
+
         # Set passive agent's baby crop parameters
         self.baby_sick_probability = model_params["baby_sick_probability"]
         self.baby_weeds_probability = model_params["baby_weeds_probability"]
@@ -179,16 +193,27 @@ class PassiveAgent(Agent):
                 func()
 
     #----------------------------------- Interaction functions for interactions between active and passive agents
+
+    '''
+    Interaction function for the plowing of land
+    '''
     def plow(self):
         if ( self.machine.current_state == self.machine.start):
             self.time_at_current_state = 0
             self.machine.plow()
 
+    '''
+    Interaction function for the sowing of seeds
+    '''
     def sow(self):
         if ( self.machine.current_state == self.machine.plowed):
             self.time_at_current_state = 0
+            self.water_level = 50
             self.machine.sow()
 
+    '''
+    Interaction function for curing plants of diseases
+    '''
     def cure(self):
         # Baby
         if ( self.machine.current_state == self.machine.baby_sick):
@@ -203,25 +228,33 @@ class PassiveAgent(Agent):
             self.time_at_current_state = 0
             self.machine.sick_flowering_recovery()
 
+    '''
+    Interaction function for the killing of weeds
+    '''
     def kill_weeds(self):
         # Baby
-        if ( self.machine.current_state == self.machine.baby_weeds):
+        if self.machine.current_state == self.machine.baby_weeds:
             self.time_at_current_state = 0
             self.machine.weeds_baby_recovery()
         # growing
-        if ( self.machine.current_state == self.machine.growing_weeds):
+        if self.machine.current_state == self.machine.growing_weeds:
             self.time_at_current_state = 0
             self.machine.weeds_growing_recovery()
         # Flowering
-        if ( self.machine.current_state == self.machine.flowering_weeds):
+        if self.machine.current_state == self.machine.flowering_weeds:
             self.time_at_current_state = 0
             self.machine.weeds_flowering_recovery()
 
+    '''
+    Interaction function for the watering of crops
+    '''
     def water(self):
-        if ( self.machine.current_state in self.machine.waterable_states):
-            return
-            #TODO: Add watering effects
+        if self.machine.current_state in self.machine.waterable_states:
+            self.water_level = 100
 
+    '''
+    Interaction function for the harvesting of crops
+    '''
     def harvest(self):
         if ( self.machine.current_state == self.machine.harvestable):
             self.time_at_current_state = 0
@@ -237,6 +270,7 @@ class PassiveAgent(Agent):
     # Here only elements essential to the plants itself are updated (random growing of weeds or spread of disease, check if enough energy to survive, etc)
     def sample_stage(self):
         self.time_at_current_state += 1
+        self.water_level -= 1
         # TODO: Implement random variability in state transitions
         switcher = {self.machine.baby: self.when_baby, self.machine.growing : self.when_growing, self.machine.flowering : self.when_flowering, self.machine.harvest : self.when_harvestable}
         func = switcher.get(self.machine.current_state,  None)
@@ -249,43 +283,107 @@ class PassiveAgent(Agent):
     Independent baby state transitions
     '''
     def when_baby(self):
+        # If enough time has passed, go to the growing state
         if (self.time_at_current_state >= self.steps_baby_to_growing):
             self.time_at_current_state = 0
             self.machine.baby_grown()
+        # Dry out if there is not enough water
+        elif (self.water_level < self.water_threshold):
+            self.time_at_current_state = 0
+            self.machine.dry_baby()
+        # Randomly get sick
         elif (self.random.random() < self.baby_sick_probability):
-            # self.time_at_current_state = 0 ---> Is this needed?
+            self.time_at_current_state = 0
             self.machine.sick_baby()
+        # Randomly get weeds
         elif (self.random.random() < self.baby_weeds_probability):
-            # self.time_at_current_state = 0
+            self.time_at_current_state = 0
             self.machine.weeds_baby()
 
     '''
     Independent growing state transitions
     '''
     def when_growing(self):
+        # If enough time has passed, go to the flowering state
         if (self.time_at_current_state >= self.steps_growing_to_flowering):
             self.time_at_current_state = 0
             self.machine.growing_to_flowering()
+        # Dry out if there is not enough water
+        elif (self.water_level < self.water_threshold):
+            self.time_at_current_state = 0
+            self.machine.dry_growing()
+        # Randomly get sick
         elif (self.random.random() < self.growing_sick_probability):
-            # self.time_at_current_state = 0
+            self.time_at_current_state = 0
             self.machine.sick_growing()
+        # Randomly get weeds
         elif (self.random.random() < self.growing_weeds_probability):
-            # self.time_at_current_state = 0
+            self.time_at_current_state = 0
             self.machine.weeds_growing()
 
     def when_flowering(self):
+        # If enough time has passed, go to the harvestable state
         if (self.time_at_current_state >= self.steps_flowering_to_harvestable):
             self.time_at_current_state = 0
             self.machine.flowering_to_harvestable()
+        # Dry out if there is not enough water
+        elif (self.water_level < self.water_threshold):
+            self.time_at_current_state = 0
+            self.machine.dry_flowering()
+        # Randomly get sick
         elif (self.random.random() < self.flowering_sick_probability):
-            # self.time_at_current_state = 0
+            self.time_at_current_state = 0
             self.machine.sick_flowering()
+        # Randomly get weeds
         elif (self.random.random() < self.flowering_weeds_probability):
-            # self.time_at_current_state = 0
+            self.time_at_current_state = 0
             self.machine.weeds_flowering()
+    
+    '''
+    Independent transition function for drying out
+    '''
+    def when_drying(self):
+        # Check if the crop was watered and should return to a non-drying state
+        if self.water_level > self.water_threshold:
+            recovery = True
 
+        # Random probability for if the plant should die. Probability will go up and if the crop has been in the drying state
+        # for as many steps as the water threshold is high, probability of dying will be 100%
+        if self.random.random() < (self.time_at_current_state / self.water_threshold):
+            dying = True
+
+        # Baby
+        if self.machine.current_state == self.machine.baby_dry:
+            if recovery:
+                self.time_at_current_state = 0 # Reset the time to 0 as a penalty for drying out
+                self.machine.dry_baby_recovery
+            if dying:
+                self.time_at_current_state = 0
+                self.machine.dry_baby_death
+        # Growing
+        if self.machine.current_state == self.machine.growing_dry:
+            if recovery:
+                self.time_at_current_state = 0 # Reset the time to 0 as a penalty for drying out
+                self.machine.dry_growing_recovery
+            if dying:
+                self.time_at_current_state = 0
+                self.machine.dry_growing_death
+        # Flowering
+        if self.machine.current_state == self.machine.flowering_dry:
+            if recovery:
+                self.time_at_current_state = 0 # Reset the time to 0 as a penalty for drying out
+                self.machine.dry_flowering_recovery
+            if dying:
+                self.time_at_current_state = 0
+                self.machine.dry_flowering_death
+
+    '''
+    Independent transitions from the harvestable state
+    '''
     def when_harvestable(self):
+        # Currently the crop just waits in the harvestable state
         return
+
     # ******************               THE INDEPENDENT TRANSITIONS END HERE             *******************
 
     def returnState(self):
