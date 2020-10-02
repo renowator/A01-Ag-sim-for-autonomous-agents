@@ -98,8 +98,7 @@ class AgentKnowledgeMap():
             else:
                 return_numpy_array[agent_plans[-1].pos[1], agent_plans[-1].pos[0]] = 1
         return_numpy_array[self.model.farmPos[1], self.model.farmPos[0]] = 1
-        print(return_numpy_array[::-1])
-        return return_numpy_array[::-1]
+        return return_numpy_array
 
 
 
