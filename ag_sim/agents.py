@@ -4,6 +4,7 @@ import ag_sim.schedule
 from queue import PriorityQueue
 import astar
 from copy import deepcopy
+from multiprocessing import Pool
 
 def printMaze(maze):
 
@@ -389,22 +390,35 @@ class ActiveAgent(Agent):
             position = self.calculationQueue.pop(0)
             # We need a deepcopy otherwise the same variable will be used recursevly
             temp = deepcopy(position[1])
-            #print("Temp: ",temp, " Location: ", position[0])
+            # print("Temp: ",temp, " Location: ", position[0])
 
             for element in self.goals:
                 if element[0] == position[0] and element[1].taken == 0:
                     self.target = element[1].pos
+
+                    self.model.knowledgeMap.attendancePoints.remove(((element[1].pos[0]-1,element[1].pos[1]),element[1]))
+                    self.model.knowledgeMap.attendancePoints.remove(((element[1].pos[0]+1,element[1].pos[1]),element[1]))
+
+                    # If there is a top or bottom field, there is also an alternitve point it can go
+                    if element[1].pos[1] == 1:
+                        self.model.knowledgeMap.attendancePoints.append(((element[1].pos[0],0),element[1]))
+                    elif element[1].pos[1] == 48:
+                        self.model.knowledgeMap.attendancePoints.append(((element[1].pos[0],49),element[1]))
+
                     element[1].taken = 1
+                    #print(element[1].taken)
 
                     done = 1
                     temp.append(position[0])
                     return temp
+
             if done == 0:
                 newPositions = self.newPositions(position[0])
                 temp.append(position[0])
-                check1 = self.checkState(newPositions, self.model.knowledgeMap.getGridAtStepAsNumpyArray(step))
-                check2 = self.checkState(check1, self.model.knowledgeMap.getGridAtStepAsNumpyArray(step+1))
-                self.addElemToQueue(check2,temp[0:])
+                initCheck = self.checkState(newPositions, self.model.knowledgeMap.getGridAtStepAsNumpyArray(step))
+                for stepNumber in range(1,2):
+                    initCheck = self.checkState(initCheck,self.model.knowledgeMap.getGridAtStepAsNumpyArray(stepNumber))
+                self.addElemToQueue(initCheck,temp[0:])
                 answer = self.BFS(step+1)
                 return answer
 
@@ -428,61 +442,53 @@ class ActiveAgent(Agent):
             if self.model.grid.is_cell_empty(my_plans[0].pos):
                 self.model.grid.move_agent(self,my_plans[0].pos)
             else:
-                print("CELL NOT EMPTY")
+                print("CELL NOT EMPTY: ", my_plans[0].pos)
+
+    # Check if the tool is good for the field next to me
+    # TODO: Add other tools and other field states
+    def toolVSfield(self,fieldState):
+        if self.current_tool == "PLOW" and fieldState == "start":
+            return True
+        return False
 
     def step(self):
 
-        plan_count = len(self.model.knowledgeMap.planAgents[self.unique_id])
-        #print(plan_count)
-        # Add what the agent sees to the knowledge grid
-        self.update_perception()
-
+        # Safety perception check
         if self.stepCount == 0:
-            self.update_perception
+            self.update_perception()
         else:
-            if plan_count == 0:
-                # If the agent has a target, check if the target is in the neighborhood
-                if self.target is not None:
-                    neighbors = self.model.grid.get_neighborhood(self.pos, False, False)
-                    for neighbor in neighbors:
-                        cell = self.model.grid.get_cell_list_contents([neighbor])
-                        passive = [obj for obj in cell if isinstance(obj, PassiveAgent)]
-                        if len(passive) > 0 and passive[0].pos == self.target:
-                            passive[0].interact(self)
-                            passive[0].taken = 0
-                    tempPassiveAgent = self.model.schedule.getPassiveAgentOnPos(self.target)
-                    self.target = None
-                    tempPassiveAgent.taken = 0
-                    
-
-                # Get all fields that the agents added in the perception map
+            if self.target == None:
+                # Get all fields from the perception map, not knowing their state
                 listOfFieldsFromKnowledge = [obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
-                possibleTargets = list()
 
+                if len(self.model.knowledgeMap.attendancePoints) == 0:
                 # Get all possible points the agent can go based on interest
-                for obj in listOfFieldsFromKnowledge:
-                    pointOfInterest = self.model.schedule.getPassiveAgent(obj.unique_id)
-                    if pointOfInterest.taken == 0 and pointOfInterest.machine.current_state.value == "start":
-                        # These are the two possible locations for every field
-                        possibleTargets.append(((pointOfInterest.pos[0]-1,pointOfInterest.pos[1]),pointOfInterest))
-                        possibleTargets.append(((pointOfInterest.pos[0]+1,pointOfInterest.pos[1]),pointOfInterest))
+                    for obj in listOfFieldsFromKnowledge:
+                        pointOfInterest = self.model.schedule.getPassiveAgent(obj.unique_id)
+                        if pointOfInterest.taken == 0 and pointOfInterest.machine.current_state.value == "start":
+                            # These are the two possible locations for every field
+                            self.model.knowledgeMap.attendancePoints.append(((pointOfInterest.pos[0]-1,pointOfInterest.pos[1]),pointOfInterest))
+                            self.model.knowledgeMap.attendancePoints.append(((pointOfInterest.pos[0]+1,pointOfInterest.pos[1]),pointOfInterest))
 
-                        # If there is a top or bottom field, there is also an alternitve point it can go
-                        if pointOfInterest.pos[1] == 1:
-                            possibleTargets.append(((pointOfInterest.pos[0],0),pointOfInterest))
-                        elif pointOfInterest.pos[1] == 48:
-                            possibleTargets.append(((pointOfInterest.pos[0],49),pointOfInterest))
+                            # If there is a top or bottom field, there is also an alternitve point it can go
+                            if pointOfInterest.pos[1] == 1:
+                                self.model.knowledgeMap.attendancePoints.append(((pointOfInterest.pos[0],0),pointOfInterest))
+                            elif pointOfInterest.pos[1] == 48:
+                                self.model.knowledgeMap.attendancePoints.append(((pointOfInterest.pos[0],49),pointOfInterest))
 
-                self.goals = possibleTargets
+                self.goals = self.model.knowledgeMap.attendancePoints
                 # Decide which is the closest point you can attend and that is free
-                while possibleTargets:
+                while len(self.model.knowledgeMap.attendancePoints) > 0:
 
                     # Calculate the shortest path based on agents point and the other possible points
                     self.visitedNodes.append(self.pos)
                     newPossiblePositions = self.newPositions(self.pos)
+
+                    # Checking the current position of the agents and the next position they will be
                     initCheck = self.checkState(newPossiblePositions,self.model.knowledgeMap.getGridAtStepAsNumpyArray(self.stepCount))
-                    secondCheck = self.checkState(initCheck,self.model.knowledgeMap.getGridAtStepAsNumpyArray(self.stepCount+1))
-                    self.addElemToQueue(secondCheck,[self.pos])
+                    for stepNumber in range(1,2):
+                        initCheck = self.checkState(initCheck,self.model.knowledgeMap.getGridAtStepAsNumpyArray(stepNumber))
+                    self.addElemToQueue(initCheck,[self.pos])
                     steps = self.BFS(self.stepCount)
 
                     # If there are any steps that the agent can take, add them to the knowledgeMap
@@ -490,6 +496,7 @@ class ActiveAgent(Agent):
                     #print(steps)
                     if steps:
                         for step in steps:
+                            #print(step)
                             if temp == 0:
                                 #Skip the first step
                                 temp = temp + 1
@@ -504,11 +511,25 @@ class ActiveAgent(Agent):
                     self.goals.clear()
                     break
         self.stepCount += 1
+        self.tryNeighboors = 0
 
     def advance(self):
-        self.update_perception()
         self.executeMove()
         self.model.knowledgeMap.remove(self.pos)
+
+        plan_count = len(self.model.knowledgeMap.planAgents[self.unique_id])
+        if plan_count == 0:
+            if self.target is not None:
+                neighbors = self.model.grid.get_neighborhood(self.pos, False, False)
+                for neighbor in neighbors:
+                    cell = self.model.grid.get_cell_list_contents([neighbor])
+                    passive = [obj for obj in cell if isinstance(obj, PassiveAgent)]
+                    if len(passive) > 0 and passive[0].pos == self.target:
+                        passive[0].interact(self)
+                        passive[0].taken = 0
+                tempPassiveAgent = self.model.schedule.getPassiveAgentOnPos(self.target)
+                self.target = None
+                tempPassiveAgent.taken = 0
         self.update_perception()
 
 '''
