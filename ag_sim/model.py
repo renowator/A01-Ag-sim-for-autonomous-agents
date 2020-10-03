@@ -60,11 +60,15 @@ class AgentKnowledgeMap():
                     existing_agent = self.navigationGrid.get_cell_list_contents(agent.pos)[0]
                     existing_agent.update(agent.state, agent.time_at_current_state)
 
-    def remove(self,agent):
-        for each in self.planAgents:
-            if len(self.planAgents[each]) > 0 and self.planAgents[each][0].pos == agent:
-                self.planGrid.remove_agent(self.planAgents[each].pop(0))
+    # This function is used for removing a step from the KnowledgeMap
+    def removeOneStep(self,agentID):
+        if self.planAgents[agentID]:
+            self.planGrid.remove_agent(self.planAgents[agentID].pop(0))
                 
+    # This function is used for canceling the entire plan in case a collision is detected
+    def cancelPlan(self,agentID):
+        while len(self.planAgents[agentID]) > 0:
+            self.planGrid.remove_agent(self.planAgents[agentID].pop(0))
     '''
     *** getGridStateAtStep returns a SingleGrid object with anticipated state of the grid at specified steps
         Input:
@@ -84,7 +88,9 @@ class AgentKnowledgeMap():
                     navGridAtStep.place_agent(agent, agent.pos)
         return navGridAtStep
 
-
+    # This function is used to get a numpy array containing 0 and 1;
+    # 0 for empty blocks at step X
+    # 1 for any kind of agent at step X
     def getGridAtStepAsNumpyArray(self, step = 0):
         plan_agent_keys = [uid for uid, a in self.planAgents.items()]
         perception_agent_keys = [uid for uid, a in self.perceptionAgents.items()]
@@ -104,11 +110,6 @@ class AgentKnowledgeMap():
                 return_numpy_array[agent_plans[-1].pos[1], agent_plans[-1].pos[0]] = 1
         return_numpy_array[self.model.farmPos[1], self.model.farmPos[0]] = 1
         return return_numpy_array
-
-
-
-
-
 
 '''
 *** AgSimulator is the main model class for this project
