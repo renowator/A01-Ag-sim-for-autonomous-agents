@@ -60,6 +60,11 @@ class AgentKnowledgeMap():
                     existing_agent = self.navigationGrid.get_cell_list_contents(agent.pos)[0]
                     existing_agent.update(agent.state, agent.time_at_current_state)
 
+    def remove(self,agent):
+        for each in self.planAgents:
+            if len(self.planAgents[each]) > 0 and self.planAgents[each][0].pos == agent:
+                self.planGrid.remove_agent(self.planAgents[each].pop(0))
+                
     '''
     *** getGridStateAtStep returns a SingleGrid object with anticipated state of the grid at specified steps
         Input:
@@ -140,7 +145,7 @@ class AgSimulator(Model):
         self.active_agents = model_params.get("active_agents", 1)
         self.farmPos = (47,48)
         # Create the schedule
-        self.schedule = ActivePassiveAgentActivation(self, ["sample_stage"], False, False)
+        self.schedule = ActivePassiveAgentActivation(self)
 
         # Create the single grid on which everything happens
         self.height = height

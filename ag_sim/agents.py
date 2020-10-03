@@ -5,36 +5,6 @@ from queue import PriorityQueue
 import astar
 from copy import deepcopy
 
-# Heuristic needed for movement cost to the goal
-def heuristic(a, b):
-    v1 = abs(a[1]-b[1])
-    v2 = abs(a[0]-b[0])
-    temp = v1+(v2*v2)
-    return temp
-
-
-# Using this function for adding an element in the "queue" at the appropriate position
-def prioritizeQueue(queue,element):
-    check = 0
-    while check == 0:
-        length = len(queue)
-        if length == 0:
-            queue.insert(0,element)
-            break
-        else:
-            while length >= 0:
-                length -= 1
-                if element[0] > queue[length][0]:
-                    queue.insert(length+1, element)
-                    check = 1
-                    break
-
-        if check == 0:
-            queue.insert(0,element)
-            break
-
-    return queue
-
 def printMaze(maze):
 
     for x in range(0,len(maze)):
@@ -244,7 +214,7 @@ class PassiveAgent(Agent):
     *** Indepentent state transitions for PassiveAgents only
     '''
     # Here only elements essential to the plants itself are updated (random growing of weeds or spread of disease, check if enough energy to survive, etc)
-    def sample_stage(self):
+    def step(self):
         self.time_at_current_state += 1
         # TODO: Implement random variability in state transitions
         switcher = {self.machine.baby: self.when_baby, self.machine.growing : self.when_growing, self.machine.flowering : self.when_flowering, self.machine.harvest : self.when_harvestable}
@@ -252,6 +222,8 @@ class PassiveAgent(Agent):
         if (func is not None):
             func()
 
+    def advance(self):
+        return "Hello"
     # ---------------------------------------- Independent transitions start here
 
     '''
@@ -357,7 +329,7 @@ class ActiveAgent(Agent):
                 + More functionality to be implemented for decision making and path planning
 
     '''
-    def __init__(self, unique_id, pos, model):
+    def __init__(self, unique_id, pos, model, **model_params):
         super().__init__(unique_id, model)
         self.pos = pos
         self.agent_type = 'ACTIVE'
@@ -366,7 +338,7 @@ class ActiveAgent(Agent):
         self.current_tool = 'PLOW'
         self.plan = None
         self.target = None # This variable is used when a target location is set by the agent
-        self.step = 0
+        self.stepCount = 0
         self.calculationQueue = list()
         self.visitedNodes = list()
         self.goals = list()
@@ -399,7 +371,8 @@ class ActiveAgent(Agent):
     def addElemToQueue(self,pos,trace):
         if pos:
             for each in pos:
-                self.calculationQueue.append((each,trace))
+                if each not in self.visitedNodes:
+                    self.calculationQueue.append((each,trace))
 
     def BFS(self,step):
         done = 0            
@@ -408,7 +381,7 @@ class ActiveAgent(Agent):
             # position[0] is the pos of the element popped
             # position[1] is the passive agent associated
             position = self.calculationQueue.pop(0)
-            
+            self.visitedNodes.append(position[0])
             # We need a deepcopy otherwise the same variable will be used recursevly
             temp = deepcopy(position[1])
             #print("Temp: ",temp, " Location: ", position[0])
@@ -422,7 +395,6 @@ class ActiveAgent(Agent):
                     temp.append(position[0])
                     return temp
             if done == 0:
-                self.visitedNodes.append(position[0])
                 newPositions = self.newPositions(position[0])
                 temp.append(position[0])
                 check1 = self.checkState(newPositions, self.model.knowledgeMap.getGridAtStepAsNumpyArray(step))
@@ -442,7 +414,6 @@ class ActiveAgent(Agent):
                 if isinstance(neighbor_obj[0], PassiveAgent):
                     self.model.knowledgeMap.update(PassiveAgentPerception(neighbor_obj[0]))
 
-
     def executeMove(self):
         my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
         my_plans.sort(key=lambda x: x.steps_left, reverse=False)
@@ -453,22 +424,15 @@ class ActiveAgent(Agent):
                 self.model.grid.move_agent(self,my_plans[0].pos)
             else:
                 print("CELL NOT EMPTY")
-    '''
-    *** sample_Stage is the stage used to debug the model
-    *** It will not be used eventually
-    *** All the below functionality will be divided in passive_stage and active_stage
-    !!!!              NOTE:: There are some bugs in here
-    '''
 
-    def sample_stage(self):
+    def step(self):
 
-        self.executeMove()
         plan_count = len(self.model.knowledgeMap.planAgents[self.unique_id])
-        
+        print(plan_count)
         # Add what the agent sees to the knowledge grid
         self.update_perception()
 
-        if self.step == 0:
+        if self.stepCount == 0:
             self.update_perception
         else:
             if plan_count == 0:
@@ -481,7 +445,7 @@ class ActiveAgent(Agent):
                         if len(passive) > 0 and passive[0].pos == self.target:
                             passive[0].interact(self)
                             passive[0].taken = 0
-                            self.target = None
+                    self.target = None
 
                 # Get all fields that the agents added in the perception map
                 listOfFieldsFromKnowledge = [obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
@@ -508,17 +472,17 @@ class ActiveAgent(Agent):
                     # Calculate the shortest path based on agents point and the other possible points
                     self.visitedNodes.append(self.pos)
                     newPossiblePositions = self.newPositions(self.pos)
-                    initCheck = self.checkState(newPossiblePositions,self.model.knowledgeMap.getGridAtStepAsNumpyArray(self.step))
-                    secondCheck = self.checkState(initCheck,self.model.knowledgeMap.getGridAtStepAsNumpyArray(self.step+1))
+                    initCheck = self.checkState(newPossiblePositions,self.model.knowledgeMap.getGridAtStepAsNumpyArray(self.stepCount))
+                    secondCheck = self.checkState(initCheck,self.model.knowledgeMap.getGridAtStepAsNumpyArray(self.stepCount+1))
                     self.addElemToQueue(secondCheck,[self.pos])
-                    steps = self.BFS(self.step)
+                    steps = self.BFS(self.stepCount)
 
                     # If there are any steps that the agent can take, add them to the knowledgeMap
-                    temp = -1
+                    temp = 0
                     print(steps)
                     if steps:
                         for step in steps:
-                            if temp == -1:
+                            if temp == 0:
                                 #Skip the first step
                                 temp = temp + 1
                             else:
@@ -530,9 +494,14 @@ class ActiveAgent(Agent):
                     self.calculationQueue.clear()
                     self.visitedNodes.clear()
                     self.goals.clear()
-                    self.executeMove()
                     break
-        self.step += 1
+        self.stepCount += 1
+
+    def advance(self):
+        self.update_perception()
+        self.executeMove()
+        self.model.knowledgeMap.remove(self.pos)
+        self.update_perception()
 
 '''
 *** ActiveAgentPlanning is an object which represents a plan of a particular ActiveAgentPlanning
