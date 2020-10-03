@@ -362,9 +362,14 @@ class ActiveAgent(Agent):
     def checkState(self, new, maze):
         checked = list()
         for element in new:
-            if maze[element[1]][element[0]] == 0 and (element not in self.visitedNodes):
-                #print("Element added: ", element, " Maze value: ", maze[element[0]][element[1]])
-                checked.append(element)
+            if maze[element[1]][element[0]] == 0:
+                test = 0
+                for each in self.visitedNodes:
+                    if each[0] == element[0] and each[1] == element[1]:
+                        test = 1
+                        
+                if test == 0:
+                    checked.append(element)
 
         return checked
 
@@ -373,15 +378,15 @@ class ActiveAgent(Agent):
             for each in pos:
                 if each not in self.visitedNodes:
                     self.calculationQueue.append((each,trace))
+                    self.visitedNodes.append(each)
 
     def BFS(self,step):
         done = 0            
         temp = list()
-        if self.calculationQueue:
+        if len(self.calculationQueue) > 0:
             # position[0] is the pos of the element popped
             # position[1] is the passive agent associated
             position = self.calculationQueue.pop(0)
-            self.visitedNodes.append(position[0])
             # We need a deepcopy otherwise the same variable will be used recursevly
             temp = deepcopy(position[1])
             #print("Temp: ",temp, " Location: ", position[0])
@@ -403,7 +408,7 @@ class ActiveAgent(Agent):
                 answer = self.BFS(step+1)
                 return answer
 
-            return None
+        return None
 
     def update_perception(self, perceptionRadius = 5):
         # Add what the agent sees to the knowledge grid
@@ -428,7 +433,7 @@ class ActiveAgent(Agent):
     def step(self):
 
         plan_count = len(self.model.knowledgeMap.planAgents[self.unique_id])
-        print(plan_count)
+        #print(plan_count)
         # Add what the agent sees to the knowledge grid
         self.update_perception()
 
@@ -445,7 +450,10 @@ class ActiveAgent(Agent):
                         if len(passive) > 0 and passive[0].pos == self.target:
                             passive[0].interact(self)
                             passive[0].taken = 0
+                    tempPassiveAgent = self.model.schedule.getPassiveAgentOnPos(self.target)
                     self.target = None
+                    tempPassiveAgent.taken = 0
+                    
 
                 # Get all fields that the agents added in the perception map
                 listOfFieldsFromKnowledge = [obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
@@ -479,7 +487,7 @@ class ActiveAgent(Agent):
 
                     # If there are any steps that the agent can take, add them to the knowledgeMap
                     temp = 0
-                    print(steps)
+                    #print(steps)
                     if steps:
                         for step in steps:
                             if temp == 0:

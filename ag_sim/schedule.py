@@ -33,3 +33,8 @@ class ActivePassiveAgentActivation(SimultaneousActivation):
 
     def getPassiveAgent(self, id):
         return self._agents[id]
+
+    def getPassiveAgentOnPos(self, pos):
+        for each in self._agents:
+            if self._agents[each].pos == pos:
+                return self._agents[each]
