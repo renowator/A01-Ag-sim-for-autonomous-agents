@@ -603,6 +603,7 @@ class ActiveAgent(Agent):
         # Safety perception check
         if self.stepCount == 0:
             self.update_perception()
+            self.stepCount += 1
         else:
             if self.target == None:
                 # Get all fields from the perception map, not knowing their state
@@ -655,7 +656,7 @@ class ActiveAgent(Agent):
                     self.calculationQueue.clear()
                     self.visitedNodes.clear()
                     break
-        self.stepCount += 1
+
         self.tryNeighboors = 0
 
     # This function is used for the advance phase due to the Simultaneous Activation schedule
