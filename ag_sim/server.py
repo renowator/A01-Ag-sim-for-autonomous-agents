@@ -155,16 +155,18 @@ class ag_sim_legend(TextElement):
         }
 
     def create_legend_row(self, name, color):
-        return "<li><div class='input-color'><input type='text' value='" + name + "' disabled/><div class='color-box' style='background-color: " + color + ";'></div></div></li>"
+        return "<ul><div class='input-color'><input type='text' value='" + name + "' disabled/><div class='color-box' style='background-color: " + color + ";'></div></div></ul>"
 
     def render(self, model):
-        css = "<style>ul{} .input-color {position: relative; margin:0px;}.input-color input {padding-left: 20px; font-size:small;}.input-color .color-box {width: 10px;height: 10px; margin-top: 7px; display: inline-block;background-color: #ccc;position: absolute;left: 5px;top: 5px;}</style>"
+        css = "<style>ul{display: inline-block;} .input-color {position: relative; margin:0px;}.input-color input {padding-left: 20px; font-size:small;}.input-color .color-box {width: 10px;height: 10px; margin-top: 7px; display: inline-block;background-color: #ccc;position: absolute;left: 5px;top: 5px;}</style>"
+
+        title = "<hr><div><h4>Legend</h4></div>"
 
         all_legend_rows = ""
         for name, color in self.legend_dict.items():
             all_legend_rows += self.create_legend_row(name, color)
 
-        return css + "<ul>" + all_legend_rows + "</ul>"
+        return css + "<div style='background-color:whitesmoke;padding:5px;'" + title + "<ul style='position:relative; left:-80px;'>" + all_legend_rows + "</ul></div>"
 
 
 canvas = AgSimGrid(ag_sim_portrayal, 50, 50, 500, 500)
@@ -177,6 +179,8 @@ model_params = {
 
     "static_text" : UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
     "active_agents": UserSettableParameter("slider", "Number of active agents", 1, 1, 20),
+    # Water
+    "water_threshold": UserSettableParameter("number", "Water threshold for when crops start drying out out (0-100)", 20, 0, 100),
     # Baby crop parameters
     "baby_sick_probability": UserSettableParameter("number", "Probability of baby getting sick", 0.01, 0, 1),
     "baby_weeds_probability": UserSettableParameter("number", "Probability of baby getting weeds", 0.01, 0, 1),
@@ -194,5 +198,5 @@ model_params = {
     "harvestable_weeds_probability": UserSettableParameter("number", "Probability of harvestable getting weeds", 0.01, 0, 1),
 }
 
-server = ModularServer(AgSimulator, [ legend, canvas], "Agriculture Simulation", model_params)
+server = ModularServer(AgSimulator, [legend, canvas], "Agriculture Simulation", model_params)
 server.port = 8521
