@@ -627,6 +627,12 @@ class ActiveAgentPlanning(Agent):
 #         cell.interact(self.target, self.current_tool)
 #         self.current_tool = None
 
+
+'''
+The FarmAgent function will be the starting point for the active agents
+and will be used as the location where active agents can switch their tools.
+---> In the current implementation, this function is not yet used <---
+'''
 class FarmAgent(Agent):
     grid = None
     x = None
