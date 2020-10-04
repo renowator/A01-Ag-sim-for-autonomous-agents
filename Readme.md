@@ -41,3 +41,49 @@ On Windows you can use python to execute ``run.py`` script
 
 Then open your browser to [http://127.0.0.1:8521/](http://127.0.0.1:8521/) and press Reset, then Run.
 
+## TODOs
+
+# Agents
+
+* Make agents move
+* Make agents plant crops when they are near an emply clop area
+* Make agents water the crops
+* Make agents solve deseases for crops
+* Make agents fix weeds per crop
+* Make agents communicate
+
+# Crops
+
+* Add deseases
+* Add water interval
+* Make desease transferable from one crop to another
+* Add weeds chance to crops
+
+# Eventual simulation properties
+
+* Main soil/crop states:
+1. Start
+2. Plowed
+3. Baby
+    - Normal
+    - Sick
+    - Overgrown (with weeds)
+4. Growing
+    - Normal
+    - Sick
+    - Overgrown (with weeds)
+    - Unhappy growth
+5. Flowering
+    - Normal
+    - Sick
+    - Overgrown (with weeds)
+6. Harvestable
+7. Death
+
+* Tools:
+    1. Plowing tool
+    2. Sowing tool
+    2. Watering tool
+    3. Disease curing tool
+    4. Weed removing tool
+    5. Harvesting tool
