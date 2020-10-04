@@ -12,9 +12,12 @@ from ag_sim.agents import PassiveAgent, ActiveAgent, PassiveAgentPerception, Act
 *** CanvasGrid.render is overriden to loop through more grids, nothing else
 *** Refer to CanvasGrid
 '''
+
+
 class AgSimGrid(CanvasGrid):
-    def __init__(self,portrayal_method,grid_width,grid_height,canvas_width=500,canvas_height=500):
-        super().__init__(portrayal_method, grid_width,grid_height*2, canvas_width, canvas_height*2)
+    def __init__(self, portrayal_method, grid_width, grid_height, canvas_width=500, canvas_height=500):
+        super().__init__(portrayal_method, grid_width,
+                         grid_height*2, canvas_width, canvas_height*2)
 
     def render(self, model):
         grid_state = defaultdict(list)
@@ -26,19 +29,20 @@ class AgSimGrid(CanvasGrid):
                     for obj in cell_objects:
                         portrayal = self.portrayal_method(obj)
                         portrayal["x"] = x
-                        portrayal["y"] = y+ model.grid.height
+                        portrayal["y"] = y + model.grid.height
                         if portrayal:
                             grid_state[portrayal["Layer"]].append(portrayal)
                 else:
                     portrayal = self.portrayal_method(None)
                     portrayal["x"] = x
-                    portrayal["y"] = y+ model.grid.height
+                    portrayal["y"] = y + model.grid.height
                     if portrayal:
                         grid_state[portrayal["Layer"]].append(portrayal)
         # Display navigationGrid from ActiveAgentKnowledgeMap
         for x in range(model.grid.width):
             for y in range(model.grid.height):
-                cell_objects = model.knowledgeMap.navigationGrid.get_cell_list_contents([(x, y)])
+                cell_objects = model.knowledgeMap.navigationGrid.get_cell_list_contents([
+                                                                                        (x, y)])
                 if (len(cell_objects) > 0):
                     for obj in cell_objects:
                         portrayal = self.portrayal_method(obj)
@@ -49,7 +53,8 @@ class AgSimGrid(CanvasGrid):
         # Display planGrid for ActiveAgentKnowledgeMap
         for x in range(model.grid.width):
             for y in range(model.grid.height):
-                cell_objects = model.knowledgeMap.planGrid.get_cell_list_contents([(x, y)])
+                cell_objects = model.knowledgeMap.planGrid.get_cell_list_contents([
+                                                                                  (x, y)])
                 if (len(cell_objects) > 0):
                     for obj in cell_objects:
                         portrayal = self.portrayal_method(obj)
@@ -61,6 +66,8 @@ class AgSimGrid(CanvasGrid):
         return grid_state
 
 # How colors for the agents are determined
+
+
 def ag_sim_portrayal(agent):
     portrayal = {}
     if agent is None:
@@ -79,31 +86,38 @@ def ag_sim_portrayal(agent):
         portrayal["h"] = 1
     elif type(agent) is PassiveAgent:
         # Tints for sick and weeds states
-        sick_tint = "#0043fc" # Blue
-        weeds_tint = "#ff00f2" # Pink
+        sick_tint = "#0043fc"  # Blue
+        weeds_tint = "#ff00f2"  # Pink
         switcher = {
             # Start state colors
-            PassiveAgentStateMachine.start: ['#8f713c', '#8f713c', '#8f713c'], # light brown
+            # light brown
+            PassiveAgentStateMachine.start: ['#8f713c', '#8f713c', '#8f713c'],
             # Plowed state colors
-            PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'], # dark brown
+            # dark brown
+            PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'],
             # Baby state colors
-            PassiveAgentStateMachine.baby: ["#84e184", "#adebad", "#d6f5d6"], # light green
+            # light green
+            PassiveAgentStateMachine.baby: ["#84e184", "#adebad", "#d6f5d6"],
             PassiveAgentStateMachine.baby_sick: ["#84e184", "#adebad", sick_tint],
             PassiveAgentStateMachine.baby_weeds: ["#84e184", "#adebad", weeds_tint],
             # Growing state colors
-            PassiveAgentStateMachine.growing : ["#00FF00", "#00CC00", "#009900"], # dark green
-            PassiveAgentStateMachine.growing_sick : ["#00FF00", "#00CC00", sick_tint],
-            PassiveAgentStateMachine.growing_weeds : ["#00FF00", "#00CC00", weeds_tint],
+            # dark green
+            PassiveAgentStateMachine.growing: ["#00FF00", "#00CC00", "#009900"],
+            PassiveAgentStateMachine.growing_sick: ["#00FF00", "#00CC00", sick_tint],
+            PassiveAgentStateMachine.growing_weeds: ["#00FF00", "#00CC00", weeds_tint],
             # Flowering state colors
-            PassiveAgentStateMachine.flowering : ['#fffd73', '#faf743', '#f7f416'], # yellow
-            PassiveAgentStateMachine.flowering_sick : ['#fffd73', '#faf743', sick_tint],
-            PassiveAgentStateMachine.flowering_weeds : ['#fffd73', '#faf743', weeds_tint],
+            # yellow
+            PassiveAgentStateMachine.flowering: ['#fffd73', '#faf743', '#f7f416'],
+            PassiveAgentStateMachine.flowering_sick: ['#fffd73', '#faf743', sick_tint],
+            PassiveAgentStateMachine.flowering_weeds: ['#fffd73', '#faf743', weeds_tint],
             # Harvestable state colors
-            PassiveAgentStateMachine.harvestable : ['#ffd06b','#ffc240', '#ffb10a'], # Orange
+            # Orange
+            PassiveAgentStateMachine.harvestable: ['#ffd06b', '#ffc240', '#ffb10a'],
             # End state colors
             PassiveAgentStateMachine.end: ['#abb6c6', '#abb6c6', '#abb6c6']
-            }
-        color = switcher.get(agent.machine.current_state,  ['#abb6c6', '#abb6c6', '#abb6c6'])
+        }
+        color = switcher.get(agent.machine.current_state,  [
+                             '#abb6c6', '#abb6c6', '#abb6c6'])
         portrayal["Color"] = color
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
@@ -117,8 +131,10 @@ def ag_sim_portrayal(agent):
         portrayal["Layer"] = 1
         portrayal["r"] = 1
     elif type(agent) is ActiveAgentPlanning:
-        switcher = {0: ['#97649e', '#97649e', '#97649e'], 1: ['#aa68af', '#aa68af', '#aa68af'], 2: ["#bd6dc1", "#bd6dc1", "#bd6dc1"], 3 : ["#cf72d2", "#cf72d2", "#cf72d2"], 4 : ['#e276e4', '#e276e4', '#e276e4'],5 : ['#f57bf5','#f57bf5', '#f57bf5'], 6:['#ea317b','#ea317b','#ea317b']}
-        color = switcher.get(agent.steps_left,   ['#ea317b','#ea317b','#ea317b'])
+        switcher = {0: ['#97649e', '#97649e', '#97649e'], 1: ['#aa68af', '#aa68af', '#aa68af'], 2: ["#bd6dc1", "#bd6dc1", "#bd6dc1"], 3: [
+            "#cf72d2", "#cf72d2", "#cf72d2"], 4: ['#e276e4', '#e276e4', '#e276e4'], 5: ['#f57bf5', '#f57bf5', '#f57bf5'], 6: ['#ea317b', '#ea317b', '#ea317b']}
+        color = switcher.get(agent.steps_left,   [
+                             '#ea317b', '#ea317b', '#ea317b'])
         portrayal["Color"] = color
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
@@ -126,7 +142,8 @@ def ag_sim_portrayal(agent):
         portrayal["w"] = 1
         portrayal["h"] = 1
     elif type(agent) is PassiveAgentPerception:
-        switcher = {PassiveAgentStateMachine.start: ['#abb6c6', '#abb6c6', '#abb6c6'], PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'], PassiveAgentStateMachine.baby: ["#84e184", "#adebad", "#d6f5d6"], PassiveAgentStateMachine.growing : ["#00FF00", "#00CC00", "#009900"], PassiveAgentStateMachine.flowering : ['#ffd700', '#ffd700', '#ffd700'], PassiveAgentStateMachine.harvest : ['#f5821f','#f5821f', '#f5821f'], PassiveAgentStateMachine.end: ['#abb6c6', '#abb6c6', '#abb6c6']}
+        switcher = {PassiveAgentStateMachine.start: ['#abb6c6', '#abb6c6', '#abb6c6'], PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'], PassiveAgentStateMachine.baby: ["#84e184", "#adebad", "#d6f5d6"], PassiveAgentStateMachine.growing: [
+            "#00FF00", "#00CC00", "#009900"], PassiveAgentStateMachine.flowering: ['#ffd700', '#ffd700', '#ffd700'], PassiveAgentStateMachine.harvest: ['#f5821f', '#f5821f', '#f5821f'], PassiveAgentStateMachine.end: ['#abb6c6', '#abb6c6', '#abb6c6']}
         color = switcher.get(agent.state,   ['#008080', '#008080', '#008080'])
         portrayal["Color"] = color
         portrayal["Shape"] = "rect"
@@ -137,21 +154,23 @@ def ag_sim_portrayal(agent):
     return portrayal
 
 # Class for representing the legend
+
+
 class ag_sim_legend(TextElement):
     def __init__(self):
         self.legend_dict = {
-            "Farm" : "#000000",
-            "Active farming agent" : "#FF3300",
-            "Road" : "#d4ccbe",
-            "Starting field" : "#8f713c",
-            "Plowed field" : "#734b10",
-            "Baby crop" : "#adebad",
-            "Growing crop" : "#00CC00",
+            "Farm": "#000000",
+            "Active farming agent": "#FF3300",
+            "Road": "#d4ccbe",
+            "Starting field": "#8f713c",
+            "Plowed field": "#734b10",
+            "Baby crop": "#adebad",
+            "Growing crop": "#00CC00",
             "Flowering crop": "#faf743",
-            "Harvestable crop" : "#ffc240",
-            "Infected with weeds" : "#ff00f2",
-            "Sick" : "#0043fc",
-            "Death crop" : "#000000"
+            "Harvestable crop": "#ffc240",
+            "Infected with weeds": "#ff00f2",
+            "Sick": "#0043fc",
+            "Death crop": "#000000"
         }
 
     def create_legend_row(self, name, color):
@@ -177,7 +196,7 @@ legend = ag_sim_legend()
 # The parameters that can be changed in the browser are defined here
 model_params = {
 
-    "static_text" : UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
+    "static_text": UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
     "active_agents": UserSettableParameter("slider", "Number of active agents", 1, 1, 20),
     # Water
     "water_threshold": UserSettableParameter("number", "Water threshold for when crops start drying out out (0-100)", 20, 0, 100),
@@ -198,5 +217,6 @@ model_params = {
     "harvestable_weeds_probability": UserSettableParameter("number", "Probability of harvestable getting weeds", 0.01, 0, 1),
 }
 
-server = ModularServer(AgSimulator, [legend, canvas], "Agriculture Simulation", model_params)
+server = ModularServer(
+    AgSimulator, [legend, canvas], "Agriculture Simulation", model_params)
 server.port = 8521
