@@ -1,11 +1,11 @@
 from collections import defaultdict
-from mesa.time import StagedActivation
+from mesa.time import *
 from ag_sim.agents import ActiveAgent, ActiveAgentPlanning
 
-class ActivePassiveAgentActivation(StagedActivation):
+class ActivePassiveAgentActivation(SimultaneousActivation):
 
-    def __init__(self, model, stage_list = ["passive_stage", "sample_stage"], shuffle = False, shuffle_between_stages = False):
-        super().__init__(model, stage_list, shuffle, shuffle_between_stages)
+    def __init__(self, model):
+        super().__init__(model)
         # TODO: Specify agent dictionary and stage parameters
         self._plan_agents = []
 
@@ -31,15 +31,10 @@ class ActivePassiveAgentActivation(StagedActivation):
         else:
             del self._agents[agent.unique_id]
 
-    def step(self):
-        # TODO: implement stages: ["Active", "Passive"]
-        if (len(self.stage_list) == 1):
-            agent_keys = [uid for uid, a in self._agents.items()]
-            # run stage for each agent in group
-            for agent_key in agent_keys:
-                getattr(self._agents[agent_key], self.stage_list[0])()
-            for agent in self._plan_agents:
-                getattr(agent, self.stage_list[0])()
-
     def getPassiveAgent(self, id):
         return self._agents[id]
+
+    def getPassiveAgentOnPos(self, pos):
+        for each in self._agents:
+            if self._agents[each].pos == pos:
+                return self._agents[each]
