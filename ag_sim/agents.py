@@ -517,7 +517,7 @@ class ActiveAgent(Agent):
             # position[1] is the passive agent associated
             position = self.calculationQueue.pop(0)
 
-            # We need a deepcopy otherwise the same variable will be used recursevly
+            # We need a deepcopy otherwise the same variable will be used recursivly
             # This is used as path history and need new copies sent the in recursive function
             temp = deepcopy(position[1])
 
