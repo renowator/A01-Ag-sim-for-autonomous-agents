@@ -184,7 +184,7 @@ class AgSimulator(Model):
         # TODO: Agents need to be created and added to the schedule here
         # Add the active agents (farming robots)
         for i in range(self.active_agents):
-            agent = ActiveAgent(self.next_id(), (0, i), self)
+            agent = ActiveAgent(self.next_id(), (0, i), self, **model_params)
             self.grid.place_agent(agent, (0, i))
             self.schedule.add(agent)
 

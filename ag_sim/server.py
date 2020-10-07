@@ -198,7 +198,7 @@ model_params = {
 
     "static_text": UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
     "active_agents": UserSettableParameter("slider", "Number of active agents", 1, 1, 20),
-    "com_protocol": UserSettableParameter("choice", "Communication protocol", value = "Simple protocol", choices=["Simple protocol", "Helper-Based protocol","Coordination Cooperative protocol"]),
+    "com_protocol": UserSettableParameter("choice", "Communication protocol", value = "Helper-Based protocol", choices=["Simple protocol", "Helper-Based protocol","Coordination Cooperative protocol"]),
     # Water
     "water_threshold": UserSettableParameter("number", "Water threshold for when crops start drying out out (0-100)", 20, 0, 100),
     # Baby crop parameters

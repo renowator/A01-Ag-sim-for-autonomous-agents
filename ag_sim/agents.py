@@ -180,6 +180,34 @@ class PassiveAgent(Agent):
             if (func is not None):
                 func()
 
+    def interactable(self):
+        if self.machine == "baby" or self.machine == "growing" or self.machine == "flowering":
+            return False
+        else:
+            return True
+
+
+    start = State("start", initial=True)
+    # Plowed
+    plowed = State("plowed")
+    # Baby
+    baby = State("baby")
+    baby_sick = State("baby_sick")
+    baby_weeds = State("baby_weeds")
+    baby_dry = State("baby_dry")
+    # Growing
+    growing = State("growing")
+    growing_sick = State("growing_sick")
+    growing_weeds = State("growing_weeds")
+    growing_dry = State("growing_dry")
+    # Flowering
+    flowering = State("flowering")
+    flowering_sick = State("flowering_sick")
+    flowering_weeds = State("flowering_weeds")
+    flowering_dry = State("flowering_dry")
+    # Harvestable
+    harvestable = State("harvestable")
+
     # ----------------------------------- Interaction functions for interactions between active and passive agents
 
     '''
@@ -457,10 +485,11 @@ class ActiveAgent(Agent):
         super().__init__(unique_id, model)
         self.pos = pos
         self.agent_type = 'ACTIVE'
+        self.protocol = model_params['com_protocol']
         # target can be watering, plowing, spraying and to gather or return the needed equipment
         self.targets = None
         self.mode = 'TEST'
-        self.current_tool = 'PLOW'
+        self.current_tool = 'NONE'
         self.plan = None
         self.target = None  # This variable is used when a target location is set by the agent
         self.stepCount = 0
@@ -600,64 +629,87 @@ class ActiveAgent(Agent):
 
     def step(self):
 
-        # Safety perception check
-        if self.stepCount == 0:
-            self.update_perception()
-            self.stepCount += 1
-        else:
-            if self.target == None:
-                # Get all fields from the perception map, not knowing their state
-                listOfFieldsFromKnowledge = [
-                    obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
+        if self.protocol == "Simple protocol":
+            #check fields around itself for possible task
+            neighbors = self.model.grid.get_neighborhood(self.pos, False, False)
+            for neighbor in neighbors:
+                    cell = self.model.grid.get_cell_list_contents([neighbor])
+                    passive = [obj for obj in cell if isinstance(obj, PassiveAgent)]
+                    if passive[0].interactable: #the crop next to the agent has a task required to it
+                        #make a plan to perform the task:
+                            #thus get the tool and perform the task
+                        return
+                    else:
+                        #keep moving untill an interactable crop is found
+                        return
 
-                self.model.knowledgeMap.attendancePoints.clear()
-                if len(self.model.knowledgeMap.attendancePoints) == 0:
-                    # Get all possible points the agent can go based on interest
-                    for obj in listOfFieldsFromKnowledge:
-                        pointOfInterest = self.model.schedule.getPassiveAgent(
-                            obj.unique_id)
-                        if pointOfInterest.taken == 0 and pointOfInterest.machine.current_state.value == "start":
-                            # These are the two possible locations for every field
-                            self.model.knowledgeMap.attendancePoints.append(
-                                ((pointOfInterest.pos[0]-1, pointOfInterest.pos[1]), pointOfInterest))
-                            self.model.knowledgeMap.attendancePoints.append(
-                                ((pointOfInterest.pos[0]+1, pointOfInterest.pos[1]), pointOfInterest))
+                        
+            #move around randomly
+        
+        elif self.protocol == "Helper-Based protocol":
+             # Safety perception check
+            if self.stepCount == 0:
+                self.update_perception()
+                self.stepCount += 1
+            else:
+                if self.target == None:
+                    # Get all fields from the perception map, not knowing their state
+                    listOfFieldsFromKnowledge = [
+                        obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
 
-                            # If there is a top or bottom field, there is also an alternitve point it can go
-                            if pointOfInterest.pos[1] == 1:
+                    self.model.knowledgeMap.attendancePoints.clear()
+                    if len(self.model.knowledgeMap.attendancePoints) == 0:
+                        # Get all possible points the agent can go based on interest
+                        for obj in listOfFieldsFromKnowledge:
+                            pointOfInterest = self.model.schedule.getPassiveAgent(
+                                obj.unique_id)
+                            if pointOfInterest.taken == 0 and pointOfInterest.machine.current_state.value == "start":
+                                # These are the two possible locations for every field
                                 self.model.knowledgeMap.attendancePoints.append(
-                                    ((pointOfInterest.pos[0], 0), pointOfInterest))
-                            elif pointOfInterest.pos[1] == 48:
+                                    ((pointOfInterest.pos[0]-1, pointOfInterest.pos[1]), pointOfInterest))
                                 self.model.knowledgeMap.attendancePoints.append(
-                                    ((pointOfInterest.pos[0], 49), pointOfInterest))
-                # Decide which is the closest point you can attend and that is free
-                while len(self.model.knowledgeMap.attendancePoints) > 0:
+                                    ((pointOfInterest.pos[0]+1, pointOfInterest.pos[1]), pointOfInterest))
 
-                    # Calculate the shortest path based on agents point and the other possible points
-                    self.visitedNodes.append(self.pos)
-                    newPossiblePositions = self.newPositions(self.pos)
+                                # If there is a top or bottom field, there is also an alternative point it can go
+                                if pointOfInterest.pos[1] == 1:
+                                    self.model.knowledgeMap.attendancePoints.append(
+                                        ((pointOfInterest.pos[0], 0), pointOfInterest))
+                                elif pointOfInterest.pos[1] == 48:
+                                    self.model.knowledgeMap.attendancePoints.append(
+                                        ((pointOfInterest.pos[0], 49), pointOfInterest))
+                    # Decide which is the closest point you can attend and that is free
+                    while len(self.model.knowledgeMap.attendancePoints) > 0:
 
-                    # Checking the current position of the agents and the next position they will be
-                    initCheck = self.checkState(
-                        newPossiblePositions, self.model.knowledgeMap.getGridAtStepAsNumpyArray(self.stepCount+1))
-                    self.addElemToQueue(initCheck, [])
+                        # Calculate the shortest path based on agents point and the other possible points
+                        self.visitedNodes.append(self.pos)
+                        newPossiblePositions = self.newPositions(self.pos)
 
-                    steps = self.BFS(deepcopy(self.stepCount))
+                        # Checking the current position of the agents and the next position they will be
+                        initCheck = self.checkState(
+                            newPossiblePositions, self.model.knowledgeMap.getGridAtStepAsNumpyArray(self.stepCount+1))
+                        self.addElemToQueue(initCheck, [])
 
-                    # If there are any steps that the agent can take, add them to the knowledgeMap
-                    temp = 0
-                    if steps:
-                        for step in steps:
-                            new_plan = ActiveAgentPlanning(self, step, temp)
-                            self.model.knowledgeMap.update(new_plan)
-                            self.model.schedule.add(new_plan)
-                            temp = temp + 1
+                        steps = self.BFS(deepcopy(self.stepCount))
 
-                    self.calculationQueue.clear()
-                    self.visitedNodes.clear()
-                    break
+                        # If there are any steps that the agent can take, add them to the knowledgeMap
+                        temp = 0
+                        if steps:
+                            for step in steps:
+                                new_plan = ActiveAgentPlanning(self, step, temp)
+                                self.model.knowledgeMap.update(new_plan)
+                                self.model.schedule.add(new_plan)
+                                temp = temp + 1
 
-        self.tryNeighboors = 0
+                        self.calculationQueue.clear()
+                        self.visitedNodes.clear()
+                        break
+
+            self.tryNeighboors = 0
+
+        elif self.protocol == "Coordination Cooperative protocol":
+            return
+
+       
 
     # This function is used for the advance phase due to the Simultaneous Activation schedule
     def advance(self):
