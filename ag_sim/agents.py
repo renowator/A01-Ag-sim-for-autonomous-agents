@@ -174,8 +174,8 @@ class PassiveAgent(Agent):
 
     def interact(self, agent):
         if (agent.agent_type == 'ACTIVE'):
-            switcher = {'PLOW': self.plow, 'SOW': self.sow, 'CURE': self.cure, 'PESTICIDES': self.kill_weeds,
-                        'WATERING_TOOL': self.water, 'HARVESTING_TOOL': self.harvest}
+            switcher = {'plow': self.plow, 'seeder': self.sow, 'sprayer': self.cure, 'wacker': self.kill_weeds,
+                        'irrigator': self.water, 'harvester': self.harvest}
             func = switcher.get(agent.current_tool, lambda: None)
             if (func is not None):
                 func()
@@ -489,7 +489,7 @@ class ActiveAgent(Agent):
         # target can be watering, plowing, spraying and to gather or return the needed equipment
         self.targets = None
         self.mode = 'TEST'
-        self.current_tool = 'NONE'
+        self.current_tool = 'none'
         self.plan = None
         self.target = None  # This variable is used when a target location is set by the agent
         self.stepCount = 0
@@ -623,28 +623,40 @@ class ActiveAgent(Agent):
     # Check if the tool is good for the field next to me
     # TODO: Add other tools and other field states
     def toolVSfield(self, fieldState):
-        if self.current_tool == "PLOW" and fieldState == "start":
+        if self.current_tool == "plow" and fieldState == "start":
+            return True
+        elif self.current_tool == "seeder" and fieldState == "plowed":
+            return True
+        elif self.current_tool == "irrigator" and (fieldState == "baby_dry" or fieldState == "growing_dry" or fieldState == "flowering_dry"):
+            return True
+        elif self.current_tool == "wacker" and (fieldState == "baby_weeds" or fieldState == "growing_weeds" or fieldState == "flowering_weeds"):
+            return True
+        elif self.current_tool == "sprayer" and (fieldState == "baby_sick" or fieldState == "growing_sick" or fieldState == "flowering_sick"):
+            return True
+        elif self.current_tool == "harvester" and fieldState == "harvestable":
             return True
         return False
 
     def step(self):
-
         if self.protocol == "Simple protocol":
+        #if the agent is searching for a task:
             #check fields around itself for possible task
             neighbors = self.model.grid.get_neighborhood(self.pos, False, False)
             for neighbor in neighbors:
-                    cell = self.model.grid.get_cell_list_contents([neighbor])
-                    passive = [obj for obj in cell if isinstance(obj, PassiveAgent)]
-                    if passive[0].interactable: #the crop next to the agent has a task required to it
-                        #make a plan to perform the task:
-                            #thus get the tool and perform the task
-                        return
-                    else:
+                cell = self.model.grid.get_cell_list_contents([neighbor])
+                if isinstance(cell, PassiveAgent): #the cell next to the agent contains a crop
+                    if cell.interactable: #the crop next to the agent has a task required to it
+                        if self.current_tool != 'none' and toolVSfield(self, cell.machine.current_state): #if the agent has a tool which is good for the field next to it
+                            cell.interact(passive[0],self) #interact with the crop
+                        else: #the tool is not good for the field or the agent has not tool
+                            pass
+                    else: #there is no crop next to the agent that requires a task
                         #keep moving untill an interactable crop is found
                         return
-
-                        
-            #move around randomly
+                elif isinstance(cell, FarmAgent): #the cell next to the agent contains the farm
+                    cell.interact(cell, self.target, self.current_tool) #get or return a tool from the farm
+        #if the agent is moving to the farm or to the goal crop
+            #it should keep moving and not perform the checks above^
         
         elif self.protocol == "Helper-Based protocol":
              # Safety perception check
@@ -809,7 +821,10 @@ class FarmAgent(Agent):
         self.food = 0
         self.irrigator = 5
         self.plow = 5
-        self.spray = 5
+        self.sprayer = 5
+        self.wacker = 5
+        self.harvester = 5
+        self.seeder = 5
 
     def sample_stage(self):
         return
