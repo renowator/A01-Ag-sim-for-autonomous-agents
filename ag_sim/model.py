@@ -170,7 +170,7 @@ class AgSimulator(Model):
         # Create the single grid on which everything happens
         self.height = height
         self.width = width
-        self.grid = SingleGrid(self.height, self.width, False)
+        self.grid = MultiGrid(self.height, self.width, False)
 
         # TODO: Specify data collection points
         self.datacollector = DataCollector(agent_reporters={
