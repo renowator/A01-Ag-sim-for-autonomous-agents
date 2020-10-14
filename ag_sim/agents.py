@@ -705,8 +705,10 @@ class ActiveAgent(Agent):
                     for obj in listOfFieldsFromKnowledge:
                         pointOfInterest = self.model.schedule.getPassiveAgent(
                             obj.unique_id)
-                        queue = prioritizeQueue(
+                        if self.toolVSfield(pointOfInterest.machine.current_state.value):
+                            queue = prioritizeQueue(
                             queue, (heuristic(pointOfInterest.pos, self.pos), pointOfInterest))
+
 
                     # Decide which is the closest point you can attend and that is free
                     while queue:

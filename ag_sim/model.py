@@ -199,6 +199,7 @@ class AgSimulator(Model):
 
         # Add the farm agent
         agent = FarmAgent(self.next_id(), self.farmPos, self)
+        self.farmObject = agent
         self.grid.place_agent(agent, self.farmPos)
         self.schedule.add(agent)
 
