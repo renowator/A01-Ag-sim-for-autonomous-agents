@@ -160,6 +160,12 @@ class AgSimulator(Model):
     def __init__(self, height=50, width=50, **model_params):
         super().__init__()
 
+        # Set a shut off condition (used with the BatchRunner to run multiple experiments)
+        self.running = model_params.get("running_condition", True)
+
+        # Initialize the harvest score for this run
+        self.harvest_score = 0
+
         # Set all model parameters from **model_params;
         # second value is the default for when the requested parameter is not set
         self.active_agents = model_params.get("active_agents", 1)
@@ -173,10 +179,14 @@ class AgSimulator(Model):
         self.grid = SingleGrid(self.height, self.width, False)
 
         # TODO: Specify data collection points
-        self.datacollector = DataCollector(agent_reporters={
-            "X": lambda a: a.pos[0],
-            "Y": lambda a: a.pos[1]
-        })
+        self.datacollector = DataCollector(
+            # model_reporters={
+            #     "harvest_score" : self.harvest_score,
+            # },
+            agent_reporters={
+                "X": lambda a: a.pos[0],
+                "Y": lambda a: a.pos[1]
+            })
 
         # TODO: Create and object to serve as common knowledge base for active agents
         self.knowledgeMap = AgentKnowledgeMap(self.height, self.width, self)
@@ -211,8 +221,11 @@ class AgSimulator(Model):
     '''
 
     def step(self):
-        self.schedule.step()
         self.datacollector.collect(self)
+        self.schedule.step()
+
+        # Test print
+        print("I just made a step!")
 
     '''
     *** run_model defines the end condition for simulation and overwrites Model.run_model
