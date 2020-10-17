@@ -176,7 +176,7 @@ class AgSimulator(Model):
         # Create the single grid on which everything happens
         self.height = height
         self.width = width
-        self.grid = SingleGrid(self.height, self.width, False)
+        self.grid = MultiGrid(self.height, self.width, False)
 
         # TODO: Specify data collection points
         self.datacollector = DataCollector(
@@ -209,6 +209,7 @@ class AgSimulator(Model):
 
         # Add the farm agent
         agent = FarmAgent(self.next_id(), self.farmPos, self)
+        self.farmObject = agent
         self.grid.place_agent(agent, self.farmPos)
         self.schedule.add(agent)
 
