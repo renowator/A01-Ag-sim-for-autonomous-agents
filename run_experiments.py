@@ -44,10 +44,10 @@ def set_fixed_params():
     "com_protocol": "Helper-Based protocol",   # Cooperation protocol used between agents
     "water_threshold": 20,            # Threshold below which crops start drying out [1-100]
 
-    # Baby crop parameters
-    "baby_sick_probability": 0.01,
-    "baby_weeds_probability": 0.01,
-    "steps_baby_to_growing": 100,
+    # Seed crop parameters
+    "seed_sick_probability": 0.01,
+    "seed_weeds_probability": 0.01,
+    "steps_seed_to_growing": 100,
 
     # Growing crop parameters
     "growing_sick_probability" : 0.01,

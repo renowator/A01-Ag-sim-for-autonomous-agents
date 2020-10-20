@@ -164,7 +164,7 @@ class AgSimulator(Model):
         self.running = model_params.get("running_condition", True)
 
         # Initialize the harvest score for this run
-        self.harvest_score = 0
+        self.harvest_score = 1000
 
         # Set all model parameters from **model_params;
         # second value is the default for when the requested parameter is not set
@@ -181,12 +181,13 @@ class AgSimulator(Model):
         # TODO: Specify data collection points
         self.datacollector = DataCollector(
             # model_reporters={
-            #     "harvest_score" : self.harvest_score,
+            #     "harvest_score" : self.harvest_score
             # },
             agent_reporters={
                 "X": lambda a: a.pos[0],
                 "Y": lambda a: a.pos[1]
-            })
+            }
+            )
 
         # TODO: Create and object to serve as common knowledge base for active agents
         self.knowledgeMap = AgentKnowledgeMap(self.height, self.width, self)
@@ -222,8 +223,8 @@ class AgSimulator(Model):
     '''
 
     def step(self):
-        self.datacollector.collect(self)
         self.schedule.step()
+        self.datacollector.collect(self)
 
         # Test print
         print("I just made a step!")
@@ -235,3 +236,6 @@ class AgSimulator(Model):
     def run_model(self, step_count=4800):
         for i in range(step_count):
             self.step()
+
+
+

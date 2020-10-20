@@ -95,11 +95,11 @@ def ag_sim_portrayal(agent):
             # Plowed state colors
             # dark brown
             PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'],
-            # Baby state colors
+            # Seed state colors
             # light green
-            PassiveAgentStateMachine.baby: ["#84e184", "#adebad", "#d6f5d6"],
-            PassiveAgentStateMachine.baby_sick: ["#84e184", "#adebad", sick_tint],
-            PassiveAgentStateMachine.baby_weeds: ["#84e184", "#adebad", weeds_tint],
+            PassiveAgentStateMachine.seed: ["#84e184", "#adebad", "#d6f5d6"],
+            PassiveAgentStateMachine.seed_sick: ["#84e184", "#adebad", sick_tint],
+            PassiveAgentStateMachine.seed_weeds: ["#84e184", "#adebad", weeds_tint],
             # Growing state colors
             # dark green
             PassiveAgentStateMachine.growing: ["#00FF00", "#00CC00", "#009900"],
@@ -142,7 +142,7 @@ def ag_sim_portrayal(agent):
         portrayal["w"] = 1
         portrayal["h"] = 1
     elif type(agent) is PassiveAgentPerception:
-        switcher = {PassiveAgentStateMachine.start: ['#abb6c6', '#abb6c6', '#abb6c6'], PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'], PassiveAgentStateMachine.baby: ["#84e184", "#adebad", "#d6f5d6"], PassiveAgentStateMachine.growing: [
+        switcher = {PassiveAgentStateMachine.start: ['#abb6c6', '#abb6c6', '#abb6c6'], PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'], PassiveAgentStateMachine.seed: ["#84e184", "#adebad", "#d6f5d6"], PassiveAgentStateMachine.growing: [
             "#00FF00", "#00CC00", "#009900"], PassiveAgentStateMachine.flowering: ['#ffd700', '#ffd700', '#ffd700'], PassiveAgentStateMachine.harvest: ['#f5821f', '#f5821f', '#f5821f'], PassiveAgentStateMachine.end: ['#abb6c6', '#abb6c6', '#abb6c6']}
         color = switcher.get(agent.state,   ['#008080', '#008080', '#008080'])
         portrayal["Color"] = color
@@ -164,7 +164,7 @@ class ag_sim_legend(TextElement):
             "Road": "#d4ccbe",
             "Starting field": "#8f713c",
             "Plowed field": "#734b10",
-            "Baby crop": "#adebad",
+            "Seed crop": "#adebad",
             "Growing crop": "#00CC00",
             "Flowering crop": "#faf743",
             "Harvestable crop": "#ffc240",
@@ -201,10 +201,10 @@ model_params = {
     "com_protocol": UserSettableParameter("choice", "Communication protocol", value = "Helper-Based protocol", choices=["Simple protocol", "Helper-Based protocol","Coordination Cooperative protocol"]),
     # Water
     "water_threshold": UserSettableParameter("number", "Water threshold for when crops start drying out out (0-100)", 20, 0, 100),
-    # Baby crop parameters
-    "baby_sick_probability": UserSettableParameter("number", "Probability of baby getting sick", 0.01, 0, 1),
-    "baby_weeds_probability": UserSettableParameter("number", "Probability of baby getting weeds", 0.01, 0, 1),
-    "steps_baby_to_growing": UserSettableParameter("number", "Steps between a crop's baby and growing state", 20, 1, 1000),
+    # Seed crop parameters
+    "seed_sick_probability": UserSettableParameter("number", "Probability of seed getting sick", 0.01, 0, 1),
+    "seed_weeds_probability": UserSettableParameter("number", "Probability of seed getting weeds", 0.01, 0, 1),
+    "steps_seed_to_growing": UserSettableParameter("number", "Steps between a crop's seed and growing state", 20, 1, 1000),
     # Growing crop parameters
     "growing_sick_probability": UserSettableParameter("number", "Probability of growing getting sick", 0.01, 0, 1),
     "growing_weeds_probability": UserSettableParameter("number", "Probability of growing getting weeds", 0.01, 0, 1),
