@@ -716,7 +716,7 @@ class ActiveAgent(Agent):
                 # the cell next to the agent contains the farm
                 elif isinstance(cell, FarmAgent):
                     # get or return a tool from the farm
-                    cell.interact(cell, self.target, self.current_tool)
+                    cell.interact2(cell, self.target, self.current_tool)
         # if the agent is moving to the farm or to the goal crop
             # it should keep moving and not perform the checks above^
 
@@ -980,7 +980,7 @@ class FarmAgent(Agent):
         print(agent.current_tool)
 
 
-    def interact(self, target, tool):  # for the taking and returning of farm equipment
+    def interact2(self, target, tool):  # for the taking and returning of farm equipment
         if tool != None:
             if tool == 'irrigator':
                 self.irrigator += 1
