@@ -91,6 +91,7 @@ class PassiveAgentStateMachine(StateMachine):
     # End states
     harvested = State("harvested")
     dead = State("dead")
+    #end = State("end")
     # State groups
     waterable_states = (seed, seed_sick, seed_weeds, growing, growing_sick,
                         growing_weeds, flowering, flowering_sick, flowering_weeds)
@@ -234,7 +235,7 @@ class PassiveAgent(Agent):
         else:
             return True
 
-    
+
 
     # ----------------------------------- Interaction functions for interactions between active and passive agents
 
@@ -427,7 +428,7 @@ class PassiveAgent(Agent):
             self.time_at_current_state = 0
             self.machine.weeds_harvestable()
 
-        
+
 
 
 
@@ -735,7 +736,9 @@ class ActiveAgent(Agent):
                         if self.toolVSfield(pointOfInterest.machine.current_state.value):
                             queue = prioritizeQueue(
                             queue, (heuristic(pointOfInterest.pos, self.pos), pointOfInterest))
-
+                    if len(queue) == 0:
+                        queue = prioritizeQueue(
+                        queue, (heuristic(self.model.farmPos, self.pos), self.model.farmObject))
 
                     # Decide which is the closest point you can attend and that is free
                     while queue:
@@ -745,7 +748,37 @@ class ActiveAgent(Agent):
                         # In here we calculate all possible points the agent can go
                         # It depends where the PassiveAgent is located and there are some special cases
                         # like the line on the right or the top/bottom of each line (as there are 3 spots the agent can go)
-                        if possibleTarget[1].taken == 0 and self.toolVSfield(possibleTarget[1].machine.current_state.value):
+                        if possibleTarget[1] == self.model.farmObject:
+                            self.target = possibleTarget[1].pos
+
+                            # These are the two possible locations for every field
+                            near.append(
+                                (possibleTarget[1].pos[0]-1, possibleTarget[1].pos[1]))
+                            near.append(
+                                (possibleTarget[1].pos[0]+1, possibleTarget[1].pos[1]))
+
+                            # If there is a top or bottom field, there is also an alternitve point it can go
+                            if possibleTarget[1].pos[1] == 1:
+                                near.append((possibleTarget[1].pos[0], 0))
+                            elif possibleTarget[1].pos[1] == 48:
+                                near.append((possibleTarget[1].pos[0], 49))
+
+                            # Calculate the shortest path based on agents point and the other possible points
+                            steps = astar.solve(self.pos, near)
+
+                            temp = 0
+                            if steps:
+                                for step in steps:
+                                    temp = temp + 1
+                                    new_plan = ActiveAgentPlanning(
+                                        self, step, temp)
+                                    self.model.knowledgeMap.update(new_plan)
+                                    self.model.schedule.add(new_plan)
+
+                            near.clear()
+                            queue.clear()
+                            break
+                        elif possibleTarget[1].taken == 0 and self.toolVSfield(possibleTarget[1].machine.current_state.value):
                             possibleTarget[1].taken = 1
                             self.target = possibleTarget[1].pos
 
@@ -809,6 +842,9 @@ class ActiveAgent(Agent):
                         passive[0].taken = 0
                         self.target = None
                         break
+                    elif self.target == self.model.farmPos:
+                        self.model.farmObject.interact(self)
+                        self.target = None
 
         # And finally update the perception of the agent(s) once more to check in the knowledgeMap that the action has been performed
         self.update_perception()
@@ -886,6 +922,63 @@ class FarmAgent(Agent):
 
     def sample_stage(self):
         return
+
+    def interact(self, agent):
+        print("Updating agent tool")
+        tool = agent.current_tool
+        if tool != None:
+            if tool == 'irrigator':
+                self.irrigator += 1
+            elif tool == 'plow':
+                self.plow += 1
+            elif tool == 'spray':
+                self.spray += 1
+            elif tool == 'wacker':
+                self.wacker += 1
+            elif tool == 'harvester':
+                self.harvester += 1
+            elif tool == 'seeder':
+                self.seeder += 1
+        agent.current_tool = None
+        plantCount = [0,0,0,0,0,0] #Plow, seed, water, weeds, cure, harvest
+        for passiveAgent in self.model.knowledgeMap.perceptionAgents:
+            fieldState = self.model.knowledgeMap.perceptionAgents[passiveAgent].state.value
+            if fieldState == "start" and self.plow > 0:
+                plantCount[0]+=1
+            elif  fieldState == "plowed" and self.seeder > 0:
+                plantCount[1]+=1
+            elif  (fieldState == "seed_dry" or fieldState == "growing_dry" or fieldState == "flowering_dry") and self.irrigator > 0:
+                plantCount[2]+=1
+            elif (fieldState == "seed_weeds" or fieldState == "growing_weeds" or fieldState == "flowering_weeds") and self.wacker > 0:
+                plantCount[3]+=1
+            elif (fieldState == "seed_sick" or fieldState == "growing_sick" or fieldState == "flowering_sick") and self.sprayer > 0:
+                plantCount[4]+=1
+            elif fieldState == "harvestable" and self.harvester > 0:
+                plantCount[5]+=1
+        f = lambda i: plantCount[i]
+        argmax = max(range(len(plantCount)), key=f)
+        if argmax == 0: #Plower
+            self.plow -= 1
+            agent.current_tool = "plow"
+        elif argmax == 1: #Seeder
+            self.seeder -= 1
+            agent.current_tool = "seeder"
+        elif argmax == 2: #Irrigator
+            self.irrigator -= 1
+            agent.current_tool == "irrigator"
+        elif argmax == 3: #Whacker
+            self.wacker -= 1
+            agent.current_tool == "wacker"
+        elif argmax == 4: #sprayer
+            self.sprayer -= 1
+            agent.current_tool == "sprayer"
+        elif argmax == 5: #Harvester
+            self.harvester -= 1
+            agent.current_tool == "harvester"
+        print(agent.unique_id)
+        print("Now has")
+        print(agent.current_tool)
+
 
     def interact(self, target, tool):  # for the taking and returning of farm equipment
         if tool != None:

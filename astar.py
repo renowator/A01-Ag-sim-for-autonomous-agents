@@ -22,7 +22,7 @@ def astar(array, start, goal):
     oheap = []
 
     heappush(oheap, (fscore[start], start))
-    
+
     while oheap:
 
         current = heappop(oheap)[1]
@@ -36,10 +36,10 @@ def astar(array, start, goal):
 
         close_set.add(current)
         for i, j in neighbors:
-            neighbor = current[0] + i, current[1] + j            
+            neighbor = current[0] + i, current[1] + j
             tentative_g_score = gscore[current] + heuristic(current, neighbor)
             if 0 <= neighbor[0] < array.shape[0]:
-                if 0 <= neighbor[1] < array.shape[1]:                
+                if 0 <= neighbor[1] < array.shape[1]:
                     if array[neighbor[0]][neighbor[1]] == 1:
                         continue
                 else:
@@ -48,16 +48,16 @@ def astar(array, start, goal):
             else:
                 # array bound x walls
                 continue
-                
+
             if neighbor in close_set and tentative_g_score >= gscore.get(neighbor, 0):
                 continue
-                
+
             if  tentative_g_score < gscore.get(neighbor, 0) or neighbor not in [i[1]for i in oheap]:
                 came_from[neighbor] = current
                 gscore[neighbor] = tentative_g_score
                 fscore[neighbor] = tentative_g_score + heuristic(neighbor, goal)
                 heappush(oheap, (fscore[neighbor], neighbor))
-                
+
     return False
 
 def solve(start,endArray):
@@ -131,7 +131,7 @@ def solve(start,endArray):
             #print(temp)
             if shortest is None or (temp is not None and len(temp) < len(shortest)) :
                 shortest = temp
-    
+
     reversePath = len(shortest)
 
     print(shortest)
@@ -143,14 +143,14 @@ def solve(start,endArray):
         for element in reverseTemp:
             correctedElement = Reverse(element)
             final.append(correctedElement)
-    else:
+    elif len(shortest) == 1:
         final.append(Reverse(shortest[0]))
 
     print("Final: ",final)
     return final
 
-def Reverse(tuples): 
-    new_tup = tuples[::-1] 
+def Reverse(tuples):
+    new_tup = tuples[::-1]
     return new_tup
 
 def printMaze(maze, path):
@@ -167,7 +167,7 @@ def printMaze(maze, path):
                     path.remove(pathElement)
                     checkElem = 1
                     break
-            
+
             if checkElem == 0:
                 print(maze[x][y], end = " ")
         print("")

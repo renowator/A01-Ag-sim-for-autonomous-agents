@@ -114,7 +114,7 @@ def ag_sim_portrayal(agent):
             # Orange
             PassiveAgentStateMachine.harvestable: ['#ffd06b', '#ffc240', '#ffb10a'],
             # End state colors
-            PassiveAgentStateMachine.end: ['#abb6c6', '#abb6c6', '#abb6c6']
+            PassiveAgentStateMachine.dead: ['#abb6c6', '#abb6c6', '#abb6c6']
         }
         color = switcher.get(agent.machine.current_state,  [
                              '#abb6c6', '#abb6c6', '#abb6c6'])
@@ -143,7 +143,7 @@ def ag_sim_portrayal(agent):
         portrayal["h"] = 1
     elif type(agent) is PassiveAgentPerception:
         switcher = {PassiveAgentStateMachine.start: ['#abb6c6', '#abb6c6', '#abb6c6'], PassiveAgentStateMachine.plowed: ['#734b10', '#734b10', '#734b10'], PassiveAgentStateMachine.seed: ["#84e184", "#adebad", "#d6f5d6"], PassiveAgentStateMachine.growing: [
-            "#00FF00", "#00CC00", "#009900"], PassiveAgentStateMachine.flowering: ['#ffd700', '#ffd700', '#ffd700'], PassiveAgentStateMachine.harvest: ['#f5821f', '#f5821f', '#f5821f'], PassiveAgentStateMachine.end: ['#abb6c6', '#abb6c6', '#abb6c6']}
+            "#00FF00", "#00CC00", "#009900"], PassiveAgentStateMachine.flowering: ['#ffd700', '#ffd700', '#ffd700'], PassiveAgentStateMachine.harvest: ['#f5821f', '#f5821f', '#f5821f'], PassiveAgentStateMachine.dead: ['#abb6c6', '#abb6c6', '#abb6c6']}
         color = switcher.get(agent.state,   ['#008080', '#008080', '#008080'])
         portrayal["Color"] = color
         portrayal["Shape"] = "rect"
