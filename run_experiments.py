@@ -7,9 +7,19 @@ with the model.
 from collections import defaultdict
 from ag_sim.model import AgSimulator
 from ag_sim.agents import PassiveAgent, ActiveAgent, PassiveAgentPerception, ActiveAgentPlanning, PassiveAgentStateMachine, FarmAgent
+from mesa.datacollection import DataCollector
 from mesa.batchrunner import BatchRunner
 
 import matplotlib.pyplot as plt
+
+
+'''
+*** The get_harvest_score function returns the current harvest score of the model.
+'''
+def get_harvest_score(model):
+    return model.harvest_score
+
+
 
 '''
 Function set_variable_params sets all the model parameters that have to be varied in the experiments. 
@@ -69,7 +79,7 @@ batch_run = BatchRunner(AgSimulator,
                         fixed_params,
                         iterations=1,
                         max_steps=100,
-                        # model_reporters={"harvest_score": "harvest_score"},
+                        model_reporters={"harvest_score": get_harvest_score},
                         agent_reporters={"pos": "pos"}
                         )
 
@@ -77,12 +87,18 @@ batch_run = BatchRunner(AgSimulator,
 batch_run.run_all()
 
 #%%
-run_data = batch_run.get_agent_vars_dataframe()
-print(run_data.head())
+# Get all agent data
+agent_data = batch_run.get_agent_vars_dataframe()
+print(agent_data.head())
 
-# plt.scatter(run_data.active_agents, run_data.pos)
-# %%
-run_data = run_data[run_data["AgentId"] == 3]
-print(run_data.head())
+#%%
+# Get all model data
+model_data = batch_run.get_model_vars_dataframe()
+print(model_data.head())
+
+
+
+plt.scatter(model_data.active_agents, model_data.harvest_score)
+
 
 # %%
