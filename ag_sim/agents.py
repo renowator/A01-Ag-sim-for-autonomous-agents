@@ -549,6 +549,8 @@ class ActiveAgent(Agent):
         self.targets = None
         self.mode = 'TEST'
         self.current_tool = 'plow'
+        if (unique_id%2==1):
+            self.current_tool = 'seeder'
         self.plan = None
         self.target = None  # This variable is used when a target location is set by the agent
         self.stepCount = 0
