@@ -62,6 +62,7 @@ def set_fixed_params():
     # Harvestable crop parameters
     "harvestable_sick_probability": 0.01,
     "harvestable_weeds_probability": 0.01,
+    "steps_harvestable_to_dead" : 100,
     }
     return fixed_params
 

@@ -84,7 +84,13 @@ class PassiveAgentStateMachine(StateMachine):
     flowering_dry = State("flowering_dry")
     # Harvestable
     harvestable = State("harvestable")
-    end = State("end")
+    harvestable_sick = State("harvestable_sick")
+    harvestable_weeds = State("harvestable_weeds")
+    harvestable_dry = State("harvestable_dry")
+
+    # End states
+    harvested = State("harvested")
+    dead = State("dead")
     # State groups
     waterable_states = (seed, seed_sick, seed_weeds, growing, growing_sick,
                         growing_weeds, flowering, flowering_sick, flowering_weeds)
@@ -96,39 +102,49 @@ class PassiveAgentStateMachine(StateMachine):
     sow = plowed.to(seed)
     # Seed state transitions
     sick_seed = seed.to(seed_sick)
-    sick_seed_death = seed_sick.to(end)
+    sick_seed_death = seed_sick.to(dead)
     sick_seed_recovery = seed_sick.to(seed)
     weeds_seed = seed.to(seed_weeds)
     weeds_seed_recovery = seed_weeds.to(seed)
-    weeds_seed_death = seed_weeds.to(end)
+    weeds_seed_death = seed_weeds.to(dead)
     dry_seed = seed.to(seed_dry)
     dry_seed_recovery = seed_dry.to(seed)
-    dry_seed_death = seed_dry.to(end)
+    dry_seed_death = seed_dry.to(dead)
     seed_grown = seed.to(growing)
     # Growing state transitions
     sick_growing = growing.to(growing_sick)
-    sick_growing_death = growing_sick.to(end)
+    sick_growing_death = growing_sick.to(dead)
     sick_growing_recovery = growing_sick.to(growing)
     weeds_growing = growing.to(growing_weeds)
     weeds_growing_recovery = growing_weeds.to(growing)
-    weeds_growing_death = growing_weeds.to(end)
+    weeds_growing_death = growing_weeds.to(dead)
     dry_growing = growing.to(growing_dry)
     dry_growing_recovery = growing_dry.to(growing)
-    dry_growing_death = growing_dry.to(end)
+    dry_growing_death = growing_dry.to(dead)
     growing_to_flowering = growing.to(flowering)
     # Flowering state transitions
     sick_flowering = flowering.to(flowering_sick)
-    sick_flowering_death = flowering_sick.to(end)
+    sick_flowering_death = flowering_sick.to(dead)
     sick_flowering_recovery = flowering_sick.to(flowering)
     weeds_flowering = flowering.to(flowering_weeds)
     weeds_flowering_recovery = flowering_weeds.to(flowering)
-    weeds_flowering_death = flowering_weeds.to(end)
+    weeds_flowering_death = flowering_weeds.to(dead)
     dry_flowering = flowering.to(flowering_dry)
     dry_flowering_recovery = flowering_dry.to(flowering)
-    dry_flowering_death = flowering_dry.to(end)
+    dry_flowering_death = flowering_dry.to(dead)
     flowering_to_harvestable = flowering.to(harvestable)
     # Harvestable state transitions
-    harvest = harvestable.to(end)
+    sick_harvestable = harvestable.to(harvestable_sick)
+    sick_harvestable_death = harvestable_sick.to(dead)
+    sick_harvestable_recovery = harvestable_sick.to(growing)
+    weeds_harvestable = harvestable.to(harvestable_weeds)
+    weeds_harvestable_recovery = harvestable_weeds.to(harvestable)
+    weeds_harvestable_death = harvestable_weeds.to(dead)
+    dry_harvestable = harvestable.to(harvestable_dry)
+    dry_harvestable_recovery = harvestable_dry.to(harvestable)
+    dry_harvestable_death = harvestable_dry.to(dead)
+    harvestable_to_dead = harvestable.to(dead)
+    harvest = harvestable.to(harvested)
     # We can add functions for transitions here
 
 
@@ -195,6 +211,7 @@ class PassiveAgent(Agent):
         # Set passive agent's harvestable crop parameters
         self.harvestable_sick_probability = model_params["harvestable_sick_probability"]
         self.harvestable_weeds_probability = model_params["harvestable_weeds_probability"]
+        self.steps_harvestable_to_dead = model_params["steps_harvestable_to_dead"]
 
     '''
     *** Main interaction function between ActiveAgent and PassiveAgent
@@ -217,26 +234,7 @@ class PassiveAgent(Agent):
         else:
             return True
 
-    start = State("start", initial=True)
-    # Plowed
-    plowed = State("plowed")
-    # Seed
-    seed = State("seed")
-    seed_sick = State("seed_sick")
-    seed_weeds = State("seed_weeds")
-    seed_dry = State("seed_dry")
-    # Growing
-    growing = State("growing")
-    growing_sick = State("growing_sick")
-    growing_weeds = State("growing_weeds")
-    growing_dry = State("growing_dry")
-    # Flowering
-    flowering = State("flowering")
-    flowering_sick = State("flowering_sick")
-    flowering_weeds = State("flowering_weeds")
-    flowering_dry = State("flowering_dry")
-    # Harvestable
-    harvestable = State("harvestable")
+    
 
     # ----------------------------------- Interaction functions for interactions between active and passive agents
 
@@ -276,6 +274,10 @@ class PassiveAgent(Agent):
         if (self.machine.current_state == self.machine.flowering_sick):
             self.time_at_current_state = 0
             self.machine.sick_flowering_recovery()
+        # Harvestable
+        if (self.machine.current_state == self.machine.harvestable_sick):
+            self.time_at_current_state = 0
+            self.machine.sick_harvestable_recovery()
 
     '''
     Interaction function for the killing of weeds
@@ -294,6 +296,10 @@ class PassiveAgent(Agent):
         if self.machine.current_state == self.machine.flowering_weeds:
             self.time_at_current_state = 0
             self.machine.weeds_flowering_recovery()
+        # Harvestable
+        if self.machine.current_state == self.machine.harvestable_weeds:
+            self.time_at_current_state = 0
+            self.machine.weeds_harvestable_recovery()
 
     '''
     Interaction function for the watering of crops
@@ -397,6 +403,34 @@ class PassiveAgent(Agent):
             self.time_at_current_state = 0
             self.machine.weeds_flowering()
 
+
+
+    '''
+    Independent transitions from the harvestable state
+    '''
+
+    def when_harvestable(self):
+        # Die if too much time has passed without being harvested
+        if (self.time_at_current_state >= self.steps_harvestable_to_dead):
+            self.time_at_current_state = 0
+            self.machine.harvestable_to_dead()
+        # Dry out if there is not enough water
+        elif (self.water_level < self.water_threshold):
+            self.time_at_current_state = 0
+            self.machine.dry_harvestable()
+        # Randomly get sick
+        elif (self.random.random() < self.harvestable_sick_probability):
+            self.time_at_current_state = 0
+            self.machine.sick_harvestable()
+        # Randomly get weeds
+        elif (self.random.random() < self.harvestable_weeds_probability):
+            self.time_at_current_state = 0
+            self.machine.weeds_harvestable()
+
+        
+
+
+
     '''
     Independent transition function for drying out
     '''
@@ -436,13 +470,7 @@ class PassiveAgent(Agent):
                 self.time_at_current_state = 0
                 self.machine.dry_flowering_death
 
-    '''
-    Independent transitions from the harvestable state
-    '''
 
-    def when_harvestable(self):
-        # Currently the crop just waits in the harvestable state
-        return
 
     # ******************               THE INDEPENDENT TRANSITIONS END HERE             *******************
 

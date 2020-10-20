@@ -216,6 +216,7 @@ model_params = {
     # Harvestable crop parameters
     "harvestable_sick_probability": UserSettableParameter("number", "Probability of harvestable getting sick", 0.01, 0, 1),
     "harvestable_weeds_probability": UserSettableParameter("number", "Probability of harvestable getting weeds", 0.01, 0, 1),
+    "steps_harvestable_to_dead": UserSettableParameter("number", "Maximum number of steps that a crop can be in the harvestable state before dying", 20, 1, 1000),
 }
 
 server = ModularServer(
