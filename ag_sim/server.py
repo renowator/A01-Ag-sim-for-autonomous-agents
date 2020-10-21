@@ -114,7 +114,8 @@ def ag_sim_portrayal(agent):
             # Orange
             PassiveAgentStateMachine.harvestable: ['#ffd06b', '#ffc240', '#ffb10a'],
             # End state colors
-            PassiveAgentStateMachine.dead: ['#abb6c6', '#abb6c6', '#abb6c6']
+            PassiveAgentStateMachine.dead: ['#abb6c6', '#abb6c6', '#abb6c6'],
+            PassiveAgentStateMachine.harvested: ['#FFFFFF', '#FFFFFF', '#FFFFFF']
         }
         color = switcher.get(agent.machine.current_state,  [
                              '#abb6c6', '#abb6c6', '#abb6c6'])
@@ -201,6 +202,9 @@ model_params = {
     "com_protocol": UserSettableParameter("choice", "Communication protocol", value = "Helper-Based protocol", choices=["Simple protocol", "Helper-Based protocol","Coordination Cooperative protocol"]),
     # Water
     "water_threshold": UserSettableParameter("number", "Water threshold for when crops start drying out out (0-100)", 20, 0, 100),
+    # Sick and weeds states   
+    "max_steps_sick": UserSettableParameter("number", "Maximum number of steps in the sick state", 50, 0, 10000),
+    "max_steps_weeds": UserSettableParameter("number", "Maximum number of steps in the weeds state", 50, 0, 10000),
     # Seed crop parameters
     "seed_sick_probability": UserSettableParameter("number", "Probability of seed getting sick", 0.01, 0, 1),
     "seed_weeds_probability": UserSettableParameter("number", "Probability of seed getting weeds", 0.01, 0, 1),

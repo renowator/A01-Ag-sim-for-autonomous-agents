@@ -194,6 +194,10 @@ class PassiveAgent(Agent):
         self.water_level = 0
         self.water_threshold = model_params["water_threshold"]
 
+        # Maximum number of steps in sick and weeds states
+        self.max_steps_sick = model_params["max_steps_sick"]
+        self.max_steps_weeds = model_params["max_steps_weeds"]
+
         # Set passive agent's seed crop parameters
         self.seed_sick_probability = model_params["seed_sick_probability"]
         self.seed_weeds_probability = model_params["seed_weeds_probability"]
@@ -330,10 +334,30 @@ class PassiveAgent(Agent):
 
     def step(self):
         self.time_at_current_state += 1
-        self.water_level -= 1
+        self.water_level -= 0.001
         # TODO: Implement random variability in state transitions
-        switcher = {self.machine.seed: self.when_seed, self.machine.growing: self.when_growing,
-                    self.machine.flowering: self.when_flowering, self.machine.harvest: self.when_harvestable}
+        switcher = {
+                    # Seed
+                    self.machine.seed: self.when_seed, 
+                    self.machine.seed_dry: self.when_drying, 
+                    self.machine.seed_sick: self.when_sick, 
+                    self.machine.seed_weeds: self.when_weeds,
+                    # Growing
+                    self.machine.growing: self.when_growing, 
+                    self.machine.growing_dry: self.when_drying, 
+                    self.machine.growing_sick: self.when_sick, 
+                    self.machine.growing_weeds: self.when_weeds, 
+                    # Flowering
+                    self.machine.flowering: self.when_flowering, 
+                    self.machine.flowering_dry: self.when_drying, 
+                    self.machine.flowering_sick: self.when_sick, 
+                    self.machine.flowering_weeds: self.when_weeds, 
+                    # Harvestable
+                    self.machine.harvestable: self.when_harvestable, 
+                    self.machine.harvestable_dry: self.when_drying, 
+                    self.machine.harvestable_sick: self.when_sick, 
+                    self.machine.harvestable_weeds: self.when_weeds, 
+                    }
         func = switcher.get(self.machine.current_state,  None)
         if (func is not None):
             func()
@@ -450,27 +474,84 @@ class PassiveAgent(Agent):
         if self.machine.current_state == self.machine.seed_dry:
             if recovery:
                 self.time_at_current_state = 0  # Reset the time to 0 as a penalty for drying out
-                self.machine.dry_seed_recovery
+                self.machine.dry_seed_recovery()
             if dying:
                 self.time_at_current_state = 0
-                self.machine.dry_seed_death
+                self.machine.dry_seed_death()
         # Growing
         if self.machine.current_state == self.machine.growing_dry:
             if recovery:
                 self.time_at_current_state = 0  # Reset the time to 0 as a penalty for drying out
-                self.machine.dry_growing_recovery
+                self.machine.dry_growing_recovery()
             if dying:
                 self.time_at_current_state = 0
-                self.machine.dry_growing_death
+                self.machine.dry_growing_death()
         # Flowering
         if self.machine.current_state == self.machine.flowering_dry:
             if recovery:
                 self.time_at_current_state = 0  # Reset the time to 0 as a penalty for drying out
-                self.machine.dry_flowering_recovery
+                self.machine.dry_flowering_recovery()
             if dying:
                 self.time_at_current_state = 0
-                self.machine.dry_flowering_death
+                self.machine.dry_flowering_death()
 
+
+
+
+    '''
+    Independent transition function for sick states
+    '''
+    def when_sick(self):
+        # Random probability for if the plant should die. Probability will go up and if the crop has been
+        # in the sick state for the maximum number of steps, probability of dying will be 100%
+        dying_because_sick = False
+        # if self.random.random() < (self.time_at_current_state / self.max_steps_sick):
+        if self.time_at_current_state >= self.max_steps_sick:
+            dying_because_sick = True
+
+        # Seed
+        if self.machine.current_state == self.machine.seed_sick:
+            if dying_because_sick:
+                self.time_at_current_state = 0
+                self.machine.sick_seed_death()
+        # Growing
+        if self.machine.current_state == self.machine.growing_sick:
+            if dying_because_sick:
+                self.time_at_current_state = 0
+                self.machine.sick_growing_death()
+        # Flowering
+        if self.machine.current_state == self.machine.flowering_sick:
+            if dying_because_sick:
+                self.time_at_current_state = 0
+                self.machine.sick_flowering_death()
+
+
+    '''
+    Independent transition function for weeds states
+    '''
+    def when_weeds(self):
+
+        # Random probability for if the plant should die. Probability will go up and if the crop has been
+        # in the weeds state for the maximum number of steps, probability of dying will be 100%
+        dying_because_weeds = False
+        if self.random.random() < (self.time_at_current_state / self.max_steps_weeds):
+            dying_because_weeds = True
+
+        # Seed
+        if self.machine.current_state == self.machine.seed_weeds:
+            if dying_because_weeds:
+                self.time_at_current_state = 0
+                self.machine.weeds_seed_death()
+        # Growing
+        if self.machine.current_state == self.machine.growing_weeds:
+            if dying_because_weeds:
+                self.time_at_current_state = 0
+                self.machine.weeds_growing_death()
+        # Flowering
+        if self.machine.current_state == self.machine.flowering_weeds:
+            if dying_because_weeds:
+                self.time_at_current_state = 0
+                self.machine.weeds_flowering_death()
 
 
     # ******************               THE INDEPENDENT TRANSITIONS END HERE             *******************
