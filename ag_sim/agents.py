@@ -967,16 +967,16 @@ class FarmAgent(Agent):
             agent.current_tool = "seeder"
         elif argmax == 2: #Irrigator
             self.irrigator -= 1
-            agent.current_tool == "irrigator"
+            agent.current_tool = "irrigator"
         elif argmax == 3: #Whacker
             self.wacker -= 1
-            agent.current_tool == "wacker"
+            agent.current_tool = "wacker"
         elif argmax == 4: #sprayer
             self.sprayer -= 1
-            agent.current_tool == "sprayer"
+            agent.current_tool = "sprayer"
         elif argmax == 5: #Harvester
             self.harvester -= 1
-            agent.current_tool == "harvester"
+            agent.current_tool = "harvester"
         print(agent.unique_id)
         print("Now has")
         print(agent.current_tool)
