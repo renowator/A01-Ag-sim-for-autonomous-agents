@@ -19,6 +19,14 @@ import matplotlib.pyplot as plt
 def get_harvest_score(model):
     return model.harvest_score
 
+def compute_harvest_score(model):
+    agent_states = [agent.machine.current_state for agent in model.schedule._agents]
+    harvest_score = 0
+    for state in agent_states:
+        if state == "harvested":
+            harvest_score += 1
+    return harvest_score
+
 
 
 '''
@@ -43,6 +51,8 @@ def set_fixed_params():
     # "active_agents": 10,                       # Number of active agents ("farming robots")
     "com_protocol": "Helper-Based protocol",   # Cooperation protocol used between agents
     "water_threshold": 20,            # Threshold below which crops start drying out [1-100]
+    "max_steps_sick" : 50,
+    "max_steps_weeds" : 50,
 
     # Seed crop parameters
     "seed_sick_probability": 0.01,
@@ -80,7 +90,10 @@ batch_run = BatchRunner(AgSimulator,
                         fixed_params,
                         iterations=1,
                         max_steps=100,
-                        model_reporters={"harvest_score": get_harvest_score},
+                        model_reporters={
+                            "harvest_score": get_harvest_score,
+                            # "computed_harvest_score" : compute_harvest_score
+                            },
                         agent_reporters={"pos": "pos"}
                         )
 

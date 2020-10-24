@@ -164,7 +164,7 @@ class AgSimulator(Model):
         self.running = model_params.get("running_condition", True)
 
         # Initialize the harvest score for this run
-        self.harvest_score = 1000
+        self.harvest_score = 0
 
         # Set all model parameters from **model_params;
         # second value is the default for when the requested parameter is not set

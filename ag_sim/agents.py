@@ -322,6 +322,8 @@ class PassiveAgent(Agent):
         if (self.machine.current_state == self.machine.harvestable):
             self.time_at_current_state = 0
             self.machine.harvest()
+
+            
     # ******************               THE INTERACTION FUNCTIONS END HERE             *******************
 
     '''
@@ -461,6 +463,9 @@ class PassiveAgent(Agent):
     '''
 
     def when_drying(self):
+        recovery = False
+        dying = False
+
         # Check if the crop was watered and should return to a non-drying state
         if self.water_level > self.water_threshold:
             recovery = True
