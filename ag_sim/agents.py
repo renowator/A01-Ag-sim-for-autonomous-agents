@@ -669,7 +669,6 @@ class ActiveAgent(Agent):
     # TODO: Add other tools and other field states
 
     def recalculateHeuristics(self):
-        print("Enter")
         if len(self.fieldsToAttend) > 0:
             queue = list()
             for element in self.fieldsToAttend:
@@ -815,54 +814,51 @@ class ActiveAgent(Agent):
 
         elif self.protocol == "Helper-Based protocol":
             # Safety perception check
-            print(self.pos)
             if self.stepCount == 0:
                 self.update_perception()
                 self.stepCount += 1
             else:
-                if self.target == None:
-                    # If the agent doesn't have to attend any fields, look for other to attend
-                    if len(self.fieldsToAttend) == 0:
-                        self.recalculateHeur = 0
-                        # Get all passiveAgents from the KnowledgeMap
-                        listOfFieldsFromKnowledge = [
-                            obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
-                        queue = list()
-                        for obj in listOfFieldsFromKnowledge:
-                            pointOfInterest = self.model.schedule.getPassiveAgent(
-                                obj.unique_id)
-                            if self.toolVSfield(pointOfInterest.machine.current_state.value):
-                                queue = prioritizeQueue(
-                                    queue, (heuristic(pointOfInterest.pos, self.pos), pointOfInterest))
+                if len(self.fieldsToAttend) == 0:
+                    self.recalculateHeur = 0
+                    # Get all passiveAgents from the KnowledgeMap
+                    listOfFieldsFromKnowledge = [
+                        obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
+                    queue = list()
+                    for obj in listOfFieldsFromKnowledge:
+                        pointOfInterest = self.model.schedule.getPassiveAgent(
+                            obj.unique_id)
+                        if self.toolVSfield(pointOfInterest.machine.current_state.value):
+                            queue = prioritizeQueue(
+                                queue, (heuristic(pointOfInterest.pos, self.pos), pointOfInterest))
 
-                        # Check the status of all agents from the knowledge map
-                        while queue:
-                            possibleTarget = queue[0]
-                            queue.remove(possibleTarget)
+                    # Check the status of all agents from the knowledge map
+                    while queue:
+                        possibleTarget = queue[0]
+                        queue.remove(possibleTarget)
 
-                            if possibleTarget[1].taken == 0 and self.toolVSfield(possibleTarget[1].machine.current_state.value):
-                                # If there are no points to attend in the agent's knowledge, add it to its knowledge
-                                if len(self.fieldsToAttend) == 0:
-                                    possibleTarget[1].taken = 1
-                                    self.fieldsToAttend.append(
-                                        (possibleTarget[0], possibleTarget[1]))
+                        if possibleTarget[1].taken == 0 and self.toolVSfield(possibleTarget[1].machine.current_state.value):
+                            # If there are no points to attend in the agent's knowledge, add it to its knowledge
+                            if len(self.fieldsToAttend) == 0:
+                                possibleTarget[1].taken = 1
+                                self.fieldsToAttend.append(
+                                    (possibleTarget[0], possibleTarget[1]))
 
-                                # If there is at least a point to attend in the agent's knowledge, get all points it can attend on that row based on the first point he added
-                                elif len(self.fieldsToAttend) != 0 and possibleTarget[1].pos[0] == self.fieldsToAttend[0][1].pos[0]:
-                                    possibleTarget[1].taken = 1
-                                    self.fieldsToAttend = prioritizeQueue(
-                                        self.fieldsToAttend, (possibleTarget[0], possibleTarget[1]))
+                            # If there is at least a point to attend in the agent's knowledge, get all points it can attend on that row based on the first point he added
+                            elif len(self.fieldsToAttend) != 0 and possibleTarget[1].pos[0] == self.fieldsToAttend[0][1].pos[0]:
+                                possibleTarget[1].taken = 1
+                                self.fieldsToAttend = prioritizeQueue(
+                                    self.fieldsToAttend, (possibleTarget[0], possibleTarget[1]))
 
+                if len(self.model.knowledgeMap.planAgents[self.unique_id]) == 0:
                     # If there is at least a field it can attend with the current tool, go there.
                     if len(self.fieldsToAttend) > 0:
                         moveTo = self.fieldsToAttend[0]
-                        self.fieldsToAttend.remove(moveTo)
-                        self.target = moveTo[1].pos
                         self.calculatePath(moveTo[1])
 
                     # Else, change the tool
                     else:
-                        self.target = self.model.farmObject.pos
+                        self.fieldsToAttend.append(
+                            tuple((0, self.model.farmObject)))
                         self.calculatePath(self.model.farmObject)
 
         elif self.protocol == "Coordination Cooperative protocol":
@@ -883,24 +879,30 @@ class ActiveAgent(Agent):
         # Then check if this was the last step. If it was, check if the agent is next to the target and perform the action.
         plan_count = len(self.model.knowledgeMap.planAgents[self.unique_id])
         if plan_count == 0:
-            if self.target is not None:
-                if self.recalculateHeur == 0:
-                    self.recalculateHeuristics()
-                    self.recalculateHeur = 1
-                neighbors = self.model.grid.get_neighborhood(
-                    self.pos, True, False)
-                for neighbor in neighbors:
-                    cell = self.model.grid.get_cell_list_contents([neighbor])
-                    passive = [obj for obj in cell if isinstance(
-                        obj, PassiveAgent)]
-                    if len(passive) > 0 and passive[0].pos == self.target:
-                        passive[0].interact(self)
-                        passive[0].taken = 0
-                        self.target = None
-                        break
-                    elif self.target == self.model.farmPos:
-                        self.model.farmObject.interact(self)
-                        self.target = None
+            # Recalculate all heuristics after I have reached the first point of interest (ONLY ONCE until fieldsToAttend is empty again)
+            if self.recalculateHeur == 0 and len(self.fieldsToAttend) > 1:
+                self.recalculateHeuristics()
+                self.recalculateHeur = 1
+            neighbors = self.model.grid.get_neighborhood(
+                self.pos, False, False)
+            for neighbor in neighbors:
+                # Get only passive aggents in neighborhood
+                if len(self.fieldsToAttend) > 1:
+                    for item in self.fieldsToAttend:
+                        if item[1].pos == neighbor:
+                            neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                                neighbor)
+                            neighborPassive.interact(self)
+                            neighborPassive.taken = 0
+                            self.fieldsToAttend.remove(self.fieldsToAttend[0])
+                            break
+                elif len(self.fieldsToAttend) == 1:
+                    if self.fieldsToAttend[0][1].pos == neighbor:
+                        neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                            neighbor)
+                        neighborPassive.interact(self)
+                        neighborPassive.taken = 0
+                        self.fieldsToAttend.clear()
 
         # And finally update the perception of the agent(s) once more to check in the knowledgeMap that the action has been performed
         self.update_perception()
@@ -980,7 +982,7 @@ class FarmAgent(Agent):
         return
 
     def interact(self, agent):
-        print("Updating agent tool")
+        #print("Updating agent tool")
         tool = agent.current_tool
         if tool != None:
             if tool == 'irrigator':
@@ -1033,9 +1035,9 @@ class FarmAgent(Agent):
         elif argmax == 5:  # Harvester
             self.harvester -= 1
             agent.current_tool = "harvester"
-        print(agent.unique_id)
-        print("Now has")
-        print(agent.current_tool)
+        # print(agent.unique_id)
+        #print("Now has")
+        # print(agent.current_tool)
 
     def interact2(self, target, tool):  # for the taking and returning of farm equipment
         if tool != None:
