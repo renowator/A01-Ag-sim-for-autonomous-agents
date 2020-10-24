@@ -115,9 +115,13 @@ def ag_sim_portrayal(agent):
             PassiveAgentStateMachine.flowering_sick: ['#fffd73', '#faf743', sick_tint],
             PassiveAgentStateMachine.flowering_weeds: ['#fffd73', '#faf743', weeds_tint],
             PassiveAgentStateMachine.flowering_dry: ['#fffd73', '#faf743', dehydrated_tint],
+            
             # Harvestable state colors
             # Orange
             PassiveAgentStateMachine.harvestable: ['#ffd06b', '#ffc240', '#ffb10a'],
+            PassiveAgentStateMachine.harvestable_sick: ['#ffd06b', '#ffc240', sick_tint],
+            PassiveAgentStateMachine.harvestable_weeds: ['#ffd06b', '#ffc240', weeds_tint],
+            PassiveAgentStateMachine.harvestable_dry: ['#ffd06b', '#ffc240', dehydrated_tint],
             # End state colors
             PassiveAgentStateMachine.dead: ['#000000', '#000000', '#000000'],
             PassiveAgentStateMachine.harvested: ['#FFFFFF', '#FFFFFF', '#FFFFFF']

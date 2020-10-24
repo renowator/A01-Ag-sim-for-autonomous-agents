@@ -133,7 +133,7 @@ class PassiveAgentStateMachine(StateMachine):
     # Harvestable state transitions
     sick_harvestable = harvestable.to(harvestable_sick)
     sick_harvestable_death = harvestable_sick.to(dead)
-    sick_harvestable_recovery = harvestable_sick.to(growing)
+    sick_harvestable_recovery = harvestable_sick.to(harvestable)
     weeds_harvestable = harvestable.to(harvestable_weeds)
     weeds_harvestable_recovery = harvestable_weeds.to(harvestable)
     weeds_harvestable_death = harvestable_weeds.to(dead)
@@ -509,6 +509,11 @@ class PassiveAgent(Agent):
             if dying_because_dehydrated:
                 self.time_at_current_state = 0
                 self.machine.dry_flowering_death()
+        # Harvestable
+        if self.machine.current_state == self.machine.harvestable_dry:
+            if dying_because_dehydrated:
+                self.time_at_current_state = 0
+                self.machine.dry_harvestable_death()
 
     '''
     Independent transition function for sick states
@@ -536,6 +541,11 @@ class PassiveAgent(Agent):
             if dying_because_sick:
                 self.time_at_current_state = 0
                 self.machine.sick_flowering_death()
+        # Harvestable
+        if self.machine.current_state == self.machine.harvestable_sick:
+            if dying_because_sick:
+                self.time_at_current_state = 0
+                self.machine.sick_harvestable_death()
 
     '''
     Independent transition function for weeds states
@@ -563,6 +573,11 @@ class PassiveAgent(Agent):
             if dying_because_weeds:
                 self.time_at_current_state = 0
                 self.machine.weeds_flowering_death()
+        # Harvestable
+        if self.machine.current_state == self.machine.harvestable_weeds:
+            if dying_because_weeds:
+                self.time_at_current_state = 0
+                self.machine.weeds_harvestable_death()
 
     # ******************               THE INDEPENDENT TRANSITIONS END HERE             *******************
 
@@ -683,11 +698,11 @@ class ActiveAgent(Agent):
             return True
         elif self.current_tool == "seeder" and fieldState == "plowed":
             return True
-        elif self.current_tool == "irrigator" and (fieldState == "seed_dry" or fieldState == "growing_dry" or fieldState == "flowering_dry"):
+        elif self.current_tool == "irrigator" and (fieldState == "seed_dry" or fieldState == "growing_dry" or fieldState == "flowering_dry" or fieldState == "harvestable_dry"):
             return True
-        elif self.current_tool == "wacker" and (fieldState == "seed_weeds" or fieldState == "growing_weeds" or fieldState == "flowering_weeds"):
+        elif self.current_tool == "wacker" and (fieldState == "seed_weeds" or fieldState == "growing_weeds" or fieldState == "flowering_weeds" or fieldState == "harvestable_weeds"):
             return True
-        elif self.current_tool == "sprayer" and (fieldState == "seed_sick" or fieldState == "growing_sick" or fieldState == "flowering_sick"):
+        elif self.current_tool == "sprayer" and (fieldState == "seed_sick" or fieldState == "growing_sick" or fieldState == "flowering_sick" or fieldState == "harvestable_sick"):
             return True
         elif self.current_tool == "harvester" and fieldState == "harvestable":
             return True
@@ -1006,11 +1021,11 @@ class FarmAgent(Agent):
                 plantCount[0] += 1
             elif fieldState == "plowed" and self.seeder > 0:
                 plantCount[1] += 1
-            elif (fieldState == "seed_dry" or fieldState == "growing_dry" or fieldState == "flowering_dry") and self.irrigator > 0:
+            elif (fieldState == "seed_dry" or fieldState == "growing_dry" or fieldState == "flowering_dry" or fieldState == "harvestable_dry") and self.irrigator > 0:
                 plantCount[2] += 1
-            elif (fieldState == "seed_weeds" or fieldState == "growing_weeds" or fieldState == "flowering_weeds") and self.wacker > 0:
+            elif (fieldState == "seed_weeds" or fieldState == "growing_weeds" or fieldState == "flowering_weeds" or fieldState == "harvestable_weeds") and self.wacker > 0:
                 plantCount[3] += 1
-            elif (fieldState == "seed_sick" or fieldState == "growing_sick" or fieldState == "flowering_sick") and self.sprayer > 0:
+            elif (fieldState == "seed_sick" or fieldState == "growing_sick" or fieldState == "flowering_sick" or fieldState == "harvestable_sick") and self.sprayer > 0:
                 plantCount[4] += 1
             elif fieldState == "harvestable" and self.harvester > 0:
                 plantCount[5] += 1
