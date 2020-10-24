@@ -7,20 +7,16 @@ from copy import deepcopy
 from multiprocessing import Pool
 
 
-def printMaze(maze):
-
-    for x in range(0, len(maze)):
-        for y in range(0, len(maze[x])):
-            print(maze[x][y], end=" ")
-        print("")
-
 # Heuristic needed for movement cost to the goal
-
-
 def heuristic(a, b):
-    v1 = abs(a[1]-b[1])
-    v2 = abs(a[0]-b[0])
-    temp = v1+(v2*v2)
+    v1 = abs(a[0]-b[0])
+    if v1 == 1:
+        temp = v1 + abs(a[1]-b[1])
+    else:
+        temp1 = v1 + abs(0-a[1]) + abs(0-b[1])
+        temp2 = v1 + abs(49-a[1]) + abs(49-b[1])
+        temp = min(temp1, temp2)
+
     return temp
 
 
@@ -91,7 +87,7 @@ class PassiveAgentStateMachine(StateMachine):
     # End states
     harvested = State("harvested")
     dead = State("dead")
-    #end = State("end")
+    # end = State("end")
     # State groups
     waterable_states = (seed, seed_sick, seed_weeds, growing, growing_sick,
                         growing_weeds, flowering, flowering_sick, flowering_weeds)
@@ -243,8 +239,6 @@ class PassiveAgent(Agent):
         else:
             return True
 
-
-
     # ----------------------------------- Interaction functions for interactions between active and passive agents
 
     '''
@@ -273,19 +267,23 @@ class PassiveAgent(Agent):
     def cure(self):
         # Seed
         if (self.machine.current_state == self.machine.seed_sick):
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.sick_seed_recovery()
         # growing
         if (self.machine.current_state == self.machine.growing_sick):
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.sick_growing_recovery()
         # Flowering
         if (self.machine.current_state == self.machine.flowering_sick):
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.sick_flowering_recovery()
         # Harvestable
         if (self.machine.current_state == self.machine.harvestable_sick):
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.sick_harvestable_recovery()
 
     '''
@@ -295,19 +293,23 @@ class PassiveAgent(Agent):
     def kill_weeds(self):
         # Seed
         if self.machine.current_state == self.machine.seed_weeds:
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.weeds_seed_recovery()
         # growing
         if self.machine.current_state == self.machine.growing_weeds:
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.weeds_growing_recovery()
         # Flowering
         if self.machine.current_state == self.machine.flowering_weeds:
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.weeds_flowering_recovery()
         # Harvestable
         if self.machine.current_state == self.machine.harvestable_weeds:
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.weeds_harvestable_recovery()
 
     '''
@@ -318,22 +320,26 @@ class PassiveAgent(Agent):
         # Seed
         if self.machine.current_state == self.machine.seed_dry:
             self.water_level = self.max_water_level
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.dry_seed_recovery()
         # growing
         if self.machine.current_state == self.machine.growing_weeds:
             self.water_level = self.max_water_level
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.dry_growing_recovery()
         # Flowering
         if self.machine.current_state == self.machine.flowering_weeds:
             self.water_level = self.max_water_level
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.dry_flowering_recovery()
         # Harvestable
         if self.machine.current_state == self.machine.harvestable_weeds:
             self.water_level = self.max_water_level
-            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.time_at_current_state = self.time_at_prev_healthy_state - \
+                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.dry_harvestable_recovery()
 
     '''
@@ -345,7 +351,6 @@ class PassiveAgent(Agent):
             self.time_at_current_state = 0
             self.machine.harvest()
 
-            
     # ******************               THE INTERACTION FUNCTIONS END HERE             *******************
 
     '''
@@ -361,27 +366,27 @@ class PassiveAgent(Agent):
         self.water_level -= 1
         # TODO: Implement random variability in state transitions
         switcher = {
-                    # Seed
-                    self.machine.seed: self.when_seed, 
-                    self.machine.seed_dry: self.when_drying, 
-                    self.machine.seed_sick: self.when_sick, 
-                    self.machine.seed_weeds: self.when_weeds,
-                    # Growing
-                    self.machine.growing: self.when_growing, 
-                    self.machine.growing_dry: self.when_drying, 
-                    self.machine.growing_sick: self.when_sick, 
-                    self.machine.growing_weeds: self.when_weeds, 
-                    # Flowering
-                    self.machine.flowering: self.when_flowering, 
-                    self.machine.flowering_dry: self.when_drying, 
-                    self.machine.flowering_sick: self.when_sick, 
-                    self.machine.flowering_weeds: self.when_weeds, 
-                    # Harvestable
-                    self.machine.harvestable: self.when_harvestable, 
-                    self.machine.harvestable_dry: self.when_drying, 
-                    self.machine.harvestable_sick: self.when_sick, 
-                    self.machine.harvestable_weeds: self.when_weeds, 
-                    }
+            # Seed
+            self.machine.seed: self.when_seed,
+            self.machine.seed_dry: self.when_drying,
+            self.machine.seed_sick: self.when_sick,
+            self.machine.seed_weeds: self.when_weeds,
+            # Growing
+            self.machine.growing: self.when_growing,
+            self.machine.growing_dry: self.when_drying,
+            self.machine.growing_sick: self.when_sick,
+            self.machine.growing_weeds: self.when_weeds,
+            # Flowering
+            self.machine.flowering: self.when_flowering,
+            self.machine.flowering_dry: self.when_drying,
+            self.machine.flowering_sick: self.when_sick,
+            self.machine.flowering_weeds: self.when_weeds,
+            # Harvestable
+            self.machine.harvestable: self.when_harvestable,
+            self.machine.harvestable_dry: self.when_drying,
+            self.machine.harvestable_sick: self.when_sick,
+            self.machine.harvestable_weeds: self.when_weeds,
+        }
         func = switcher.get(self.machine.current_state,  None)
         if (func is not None):
             func()
@@ -478,10 +483,6 @@ class PassiveAgent(Agent):
             self.time_at_current_state = 0
             self.machine.weeds_harvestable()
 
-
-
-
-
     '''
     Independent transition function for drying out
     '''
@@ -509,12 +510,10 @@ class PassiveAgent(Agent):
                 self.time_at_current_state = 0
                 self.machine.dry_flowering_death()
 
-
-
-
     '''
     Independent transition function for sick states
     '''
+
     def when_sick(self):
         dying_because_sick = False
 
@@ -538,10 +537,10 @@ class PassiveAgent(Agent):
                 self.time_at_current_state = 0
                 self.machine.sick_flowering_death()
 
-
     '''
     Independent transition function for weeds states
     '''
+
     def when_weeds(self):
 
         # Die if the crop has weeds for too long
@@ -564,7 +563,6 @@ class PassiveAgent(Agent):
             if dying_because_weeds:
                 self.time_at_current_state = 0
                 self.machine.weeds_flowering_death()
-
 
     # ******************               THE INDEPENDENT TRANSITIONS END HERE             *******************
 
@@ -642,114 +640,11 @@ class ActiveAgent(Agent):
         self.targets = None
         self.mode = 'TEST'
         self.current_tool = 'plow'
-        if (unique_id%2==1):
-            self.current_tool = 'seeder'
         self.plan = None
         self.target = None  # This variable is used when a target location is set by the agent
         self.stepCount = 0
-        self.calculationQueue = list()
-        self.visitedNodes = list()
-
-    # Calculate new positions
-    def newPositions(self, pos):
-        newPos = list()
-
-        if pos[1]-1 >= 0:
-            newPos.append((pos[0], pos[1]-1))
-
-        if pos[1]+1 <= 49:
-            newPos.append((pos[0], pos[1]+1))
-
-        if pos[0]-1 >= 0:
-            newPos.append((pos[0]-1, pos[1]))
-
-        if pos[0]+1 <= 49:
-            newPos.append((pos[0]+1, pos[1]))
-
-        return newPos
-
-    # Check in the maze (from currentStep to currentStep+2 done in BFS function) if the position is free
-    def checkState(self, new, maze):
-        checked = list()
-        for element in new:
-            if maze[element[1]][element[0]] == 0:
-                test = 0
-                for each in self.visitedNodes:
-                    if each[0] == element[0] and each[1] == element[1]:
-                        test = 1
-
-                if test == 0:
-                    checked.append(element)
-
-        return checked
-
-    # Add element to queue and mark the node as visited
-    def addElemToQueue(self, pos, trace):
-        if pos:
-            for each in pos:
-                if each not in self.visitedNodes:
-                    self.calculationQueue.append((each, trace))
-                    self.visitedNodes.append(each)
-
-    # Implementation of BFS on a numpy array that searches for goals.
-    # It will select the first one that it finds.
-    def BFS(self, step):
-        done = 0
-        if len(self.calculationQueue) > 0:
-            # position[0] is the pos of the element popped
-            # position[1] is the passive agent associated
-            position = self.calculationQueue.pop(0)
-
-            # We need a deepcopy otherwise the same variable will be used recursivly
-            # This is used as path history and need new copies sent the in recursive function
-            temp = deepcopy(position[1])
-
-            for element in self.model.knowledgeMap.attendancePoints:
-                if element[0] == position[0] and element[1].taken == 0:
-                    self.target = element[1].pos
-
-                    # Remove all points marked for one field from the knowledgeMap attendancePoints
-                    self.model.knowledgeMap.attendancePoints.remove(
-                        ((element[1].pos[0]-1, element[1].pos[1]), element[1]))
-                    self.model.knowledgeMap.attendancePoints.remove(
-                        ((element[1].pos[0]+1, element[1].pos[1]), element[1]))
-
-                    # If there is a top or bottom field, there is also an alternitve point it can go
-                    if element[1].pos[1] == 1:
-                        self.model.knowledgeMap.attendancePoints.append(
-                            ((element[1].pos[0], 0), element[1]))
-                    elif element[1].pos[1] == 48:
-                        self.model.knowledgeMap.attendancePoints.append(
-                            ((element[1].pos[0], 49), element[1]))
-
-                    # Mark the passiveAgent (field) as taken
-                    element[1].taken = 1
-
-                    # done here used for safety
-                    done = 1
-                    temp.append(position[0])
-                    return temp
-
-            # If the search is not done, continue
-            if done == 0:
-                # Get new positions based on current
-                newPositions = self.newPositions(position[0])
-
-                # Update history
-                temp.append(position[0])
-
-                # Check for next step if the blocks I would like to move are available, based on current knowledge
-                initCheck = self.checkState(
-                    newPositions, self.model.knowledgeMap.getGridAtStepAsNumpyArray(1))
-
-                # Add the new positions to the queue
-                self.addElemToQueue(initCheck, temp[0:])
-
-                # Calculate recursively a new point until we get near a field
-                answer = self.BFS(deepcopy(1))
-                return answer
-
-        return None
+        self.fieldsToAttend = list()
+        self.recalculateHeur = 0
 
     # Add what the agent sees to the knowledgeMap
     def update_perception(self, perceptionRadius=5):
@@ -773,6 +668,17 @@ class ActiveAgent(Agent):
     # Check if the tool is good for the field next to me
     # TODO: Add other tools and other field states
 
+    def recalculateHeuristics(self):
+        print("Enter")
+        if len(self.fieldsToAttend) > 0:
+            queue = list()
+            for element in self.fieldsToAttend:
+                queue = prioritizeQueue(
+                    queue, (heuristic(element[1].pos, self.pos), element[1]))
+
+            self.fieldsToAttend.clear()
+            self.fieldsToAttend = queue
+
     def toolVSfield(self, fieldState):
         if self.current_tool == "plow" and fieldState == "start":
             return True
@@ -788,34 +694,35 @@ class ActiveAgent(Agent):
             return True
         return False
 
+    def calculatePath(self, moveTo):
+        near = list()
+        # These are the two possible locations for every field
+        near.append(
+            (moveTo.pos[0]-1, moveTo.pos[1]))
+        near.append(
+            (moveTo.pos[0]+1, moveTo.pos[1]))
+
+        # If there is a top or bottom field, there is also an alternitve point it can go
+        if moveTo.pos[1] == 1:
+            near.append((moveTo.pos[0], 0))
+        elif moveTo.pos[1] == 48:
+            near.append((moveTo.pos[0], 49))
+
+        # Calculate the shortest path based on agents point and the other possible points
+        steps = astar.solve(self.pos, near)
+
+        temp = 0
+        if steps:
+            for step in steps:
+                temp = temp + 1
+                new_plan = ActiveAgentPlanning(
+                    self, step, temp)
+                self.model.knowledgeMap.update(new_plan)
+                self.model.schedule.add(new_plan)
+        near.clear()
+
     def step(self):
         if self.protocol == "Simple protocol":
-            # if the agent is searching for a task:
-            # check fields around itself for possible task
-            neighbors = self.model.grid.get_neighborhood(
-                self.pos, False, False)
-            for neighbor in neighbors:
-                cell = self.model.grid.get_cell_list_contents([neighbor])
-                # the cell next to the agent contains a crop
-                if isinstance(cell, PassiveAgent):
-                    if cell.interactable:  # the crop next to the agent has a task required to it
-                        # if the agent has a tool which is good for the field next to it
-                        if self.current_tool != 'none' and toolVSfield(self, cell.machine.current_state):
-                            # interact with the crop
-                            cell.interact(passive[0], self)
-                        else:  # the tool is not good for the field or the agent has not tool
-                            pass
-                    else:  # there is no crop next to the agent that requires a task
-                        # keep moving untill an interactable crop is found
-                        return
-                # the cell next to the agent contains the farm
-                elif isinstance(cell, FarmAgent):
-                    # get or return a tool from the farm
-                    cell.interact2(cell, self.target, self.current_tool)
-        # if the agent is moving to the farm or to the goal crop
-            # it should keep moving and not perform the checks above^
-
-        elif self.protocol == "Helper-Based protocol":
             # Safety perception check
             if self.stepCount == 0:
                 self.update_perception()
@@ -830,10 +737,11 @@ class ActiveAgent(Agent):
                             obj.unique_id)
                         if self.toolVSfield(pointOfInterest.machine.current_state.value):
                             queue = prioritizeQueue(
-                            queue, (heuristic(pointOfInterest.pos, self.pos), pointOfInterest))
+                                queue, (heuristic(pointOfInterest.pos, self.pos), pointOfInterest))
+
                     if len(queue) == 0:
                         queue = prioritizeQueue(
-                        queue, (heuristic(self.model.farmPos, self.pos), self.model.farmObject))
+                            queue, (heuristic(self.model.farmPos, self.pos), self.model.farmObject))
 
                     # Decide which is the closest point you can attend and that is free
                     while queue:
@@ -905,7 +813,57 @@ class ActiveAgent(Agent):
                             queue.clear()
                             break
 
-            self.tryNeighboors = 0
+        elif self.protocol == "Helper-Based protocol":
+            # Safety perception check
+            print(self.pos)
+            if self.stepCount == 0:
+                self.update_perception()
+                self.stepCount += 1
+            else:
+                if self.target == None:
+                    # If the agent doesn't have to attend any fields, look for other to attend
+                    if len(self.fieldsToAttend) == 0:
+                        self.recalculateHeur = 0
+                        # Get all passiveAgents from the KnowledgeMap
+                        listOfFieldsFromKnowledge = [
+                            obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
+                        queue = list()
+                        for obj in listOfFieldsFromKnowledge:
+                            pointOfInterest = self.model.schedule.getPassiveAgent(
+                                obj.unique_id)
+                            if self.toolVSfield(pointOfInterest.machine.current_state.value):
+                                queue = prioritizeQueue(
+                                    queue, (heuristic(pointOfInterest.pos, self.pos), pointOfInterest))
+
+                        # Check the status of all agents from the knowledge map
+                        while queue:
+                            possibleTarget = queue[0]
+                            queue.remove(possibleTarget)
+
+                            if possibleTarget[1].taken == 0 and self.toolVSfield(possibleTarget[1].machine.current_state.value):
+                                # If there are no points to attend in the agent's knowledge, add it to its knowledge
+                                if len(self.fieldsToAttend) == 0:
+                                    possibleTarget[1].taken = 1
+                                    self.fieldsToAttend.append(
+                                        (possibleTarget[0], possibleTarget[1]))
+
+                                # If there is at least a point to attend in the agent's knowledge, get all points it can attend on that row based on the first point he added
+                                elif len(self.fieldsToAttend) != 0 and possibleTarget[1].pos[0] == self.fieldsToAttend[0][1].pos[0]:
+                                    possibleTarget[1].taken = 1
+                                    self.fieldsToAttend = prioritizeQueue(
+                                        self.fieldsToAttend, (possibleTarget[0], possibleTarget[1]))
+
+                    # If there is at least a field it can attend with the current tool, go there.
+                    if len(self.fieldsToAttend) > 0:
+                        moveTo = self.fieldsToAttend[0]
+                        self.fieldsToAttend.remove(moveTo)
+                        self.target = moveTo[1].pos
+                        self.calculatePath(moveTo[1])
+
+                    # Else, change the tool
+                    else:
+                        self.target = self.model.farmObject.pos
+                        self.calculatePath(self.model.farmObject)
 
         elif self.protocol == "Coordination Cooperative protocol":
             return
@@ -926,6 +884,9 @@ class ActiveAgent(Agent):
         plan_count = len(self.model.knowledgeMap.planAgents[self.unique_id])
         if plan_count == 0:
             if self.target is not None:
+                if self.recalculateHeur == 0:
+                    self.recalculateHeuristics()
+                    self.recalculateHeur = 1
                 neighbors = self.model.grid.get_neighborhood(
                     self.pos, True, False)
                 for neighbor in neighbors:
@@ -1035,45 +996,46 @@ class FarmAgent(Agent):
             elif tool == 'seeder':
                 self.seeder += 1
         agent.current_tool = None
-        plantCount = [0,0,0,0,0,0] #Plow, seed, water, weeds, cure, harvest
+        # Plow, seed, water, weeds, cure, harvest
+        plantCount = [0, 0, 0, 0, 0, 0]
         for passiveAgent in self.model.knowledgeMap.perceptionAgents:
             fieldState = self.model.knowledgeMap.perceptionAgents[passiveAgent].state.value
             if fieldState == "start" and self.plow > 0:
-                plantCount[0]+=1
-            elif  fieldState == "plowed" and self.seeder > 0:
-                plantCount[1]+=1
-            elif  (fieldState == "seed_dry" or fieldState == "growing_dry" or fieldState == "flowering_dry") and self.irrigator > 0:
-                plantCount[2]+=1
+                plantCount[0] += 1
+            elif fieldState == "plowed" and self.seeder > 0:
+                plantCount[1] += 1
+            elif (fieldState == "seed_dry" or fieldState == "growing_dry" or fieldState == "flowering_dry") and self.irrigator > 0:
+                plantCount[2] += 1
             elif (fieldState == "seed_weeds" or fieldState == "growing_weeds" or fieldState == "flowering_weeds") and self.wacker > 0:
-                plantCount[3]+=1
+                plantCount[3] += 1
             elif (fieldState == "seed_sick" or fieldState == "growing_sick" or fieldState == "flowering_sick") and self.sprayer > 0:
-                plantCount[4]+=1
+                plantCount[4] += 1
             elif fieldState == "harvestable" and self.harvester > 0:
-                plantCount[5]+=1
-        f = lambda i: plantCount[i]
+                plantCount[5] += 1
+
+        def f(i): return plantCount[i]
         argmax = max(range(len(plantCount)), key=f)
-        if argmax == 0: #Plower
+        if argmax == 0:  # Plower
             self.plow -= 1
             agent.current_tool = "plow"
-        elif argmax == 1: #Seeder
+        elif argmax == 1:  # Seeder
             self.seeder -= 1
             agent.current_tool = "seeder"
-        elif argmax == 2: #Irrigator
+        elif argmax == 2:  # Irrigator
             self.irrigator -= 1
             agent.current_tool = "irrigator"
-        elif argmax == 3: #Whacker
+        elif argmax == 3:  # Whacker
             self.wacker -= 1
             agent.current_tool = "wacker"
-        elif argmax == 4: #sprayer
+        elif argmax == 4:  # sprayer
             self.sprayer -= 1
             agent.current_tool = "sprayer"
-        elif argmax == 5: #Harvester
+        elif argmax == 5:  # Harvester
             self.harvester -= 1
             agent.current_tool = "harvester"
         print(agent.unique_id)
         print("Now has")
         print(agent.current_tool)
-
 
     def interact2(self, target, tool):  # for the taking and returning of farm equipment
         if tool != None:
