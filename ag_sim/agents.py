@@ -971,12 +971,12 @@ class FarmAgent(Agent):
         super().__init__(unique_id, model)
         self.pos = pos
         self.food = 0
-        self.irrigator = 5
-        self.plow = 5
-        self.sprayer = 5
-        self.wacker = 5
-        self.harvester = 5
-        self.seeder = 5
+        self.irrigator = 50
+        self.plow = 50
+        self.sprayer = 50
+        self.wacker = 50
+        self.harvester = 50
+        self.seeder = 50
 
     def sample_stage(self):
         return
@@ -990,7 +990,7 @@ class FarmAgent(Agent):
             elif tool == 'plow':
                 self.plow += 1
             elif tool == 'spray':
-                self.spray += 1
+                self.sprayer += 1
             elif tool == 'wacker':
                 self.wacker += 1
             elif tool == 'harvester':
@@ -1048,7 +1048,7 @@ class FarmAgent(Agent):
                 self.plow += 1
                 return True
             elif tool == 'spray':
-                self.spray += 1
+                self.sprayer += 1
                 return True
         elif target == 'watering' and self.irrigator > 0:
             self.irrigator -= 1
@@ -1056,8 +1056,8 @@ class FarmAgent(Agent):
         elif target == 'plowing' and self.plow > 0:
             self.plow -= 1
             return True
-        elif target == 'spraying' and self.spray > 0:
-            self.spray -= 1
+        elif target == 'spraying' and self.sprayer > 0:
+            self.sprayer -= 1
             return True
         else:
             return False
