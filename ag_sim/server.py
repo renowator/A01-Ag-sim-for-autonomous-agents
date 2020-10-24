@@ -88,6 +88,8 @@ def ag_sim_portrayal(agent):
         # Tints for sick and weeds states
         sick_tint = "#0043fc"  # Blue
         weeds_tint = "#ff00f2"  # Pink
+        dehydrated_tint = "#49007a" # Purple
+
         switcher = {
             # Start state colors
             # light brown
@@ -100,21 +102,24 @@ def ag_sim_portrayal(agent):
             PassiveAgentStateMachine.seed: ["#84e184", "#adebad", "#d6f5d6"],
             PassiveAgentStateMachine.seed_sick: ["#84e184", "#adebad", sick_tint],
             PassiveAgentStateMachine.seed_weeds: ["#84e184", "#adebad", weeds_tint],
+            PassiveAgentStateMachine.seed_dry: ["#84e184", "#adebad", dehydrated_tint],
             # Growing state colors
             # dark green
             PassiveAgentStateMachine.growing: ["#00FF00", "#00CC00", "#009900"],
             PassiveAgentStateMachine.growing_sick: ["#00FF00", "#00CC00", sick_tint],
             PassiveAgentStateMachine.growing_weeds: ["#00FF00", "#00CC00", weeds_tint],
+            PassiveAgentStateMachine.growing_dry: ["#00FF00", "#00CC00", dehydrated_tint],
             # Flowering state colors
             # yellow
             PassiveAgentStateMachine.flowering: ['#fffd73', '#faf743', '#f7f416'],
             PassiveAgentStateMachine.flowering_sick: ['#fffd73', '#faf743', sick_tint],
             PassiveAgentStateMachine.flowering_weeds: ['#fffd73', '#faf743', weeds_tint],
+            PassiveAgentStateMachine.flowering_dry: ['#fffd73', '#faf743', dehydrated_tint],
             # Harvestable state colors
             # Orange
             PassiveAgentStateMachine.harvestable: ['#ffd06b', '#ffc240', '#ffb10a'],
             # End state colors
-            PassiveAgentStateMachine.dead: ['#abb6c6', '#abb6c6', '#abb6c6'],
+            PassiveAgentStateMachine.dead: ['#000000', '#000000', '#000000'],
             PassiveAgentStateMachine.harvested: ['#FFFFFF', '#FFFFFF', '#FFFFFF']
         }
         color = switcher.get(agent.machine.current_state,  [
@@ -160,7 +165,7 @@ def ag_sim_portrayal(agent):
 class ag_sim_legend(TextElement):
     def __init__(self):
         self.legend_dict = {
-            "Farm": "#000000",
+            "Farm": "#8a0000",
             "Active farming agent": "#FF3300",
             "Road": "#d4ccbe",
             "Starting field": "#8f713c",
@@ -171,7 +176,9 @@ class ag_sim_legend(TextElement):
             "Harvestable crop": "#ffc240",
             "Infected with weeds": "#ff00f2",
             "Sick": "#0043fc",
-            "Death crop": "#000000"
+            "Dehydrated" : "#4f1e8f",
+            "Death crop": "#000000",
+            "Harvested crop": "#FFFFFF"
         }
 
     def create_legend_row(self, name, color):
@@ -201,26 +208,27 @@ model_params = {
     "active_agents": UserSettableParameter("slider", "Number of active agents", 1, 1, 20),
     "com_protocol": UserSettableParameter("choice", "Communication protocol", value = "Helper-Based protocol", choices=["Simple protocol", "Helper-Based protocol","Coordination Cooperative protocol"]),
     
-    # Water, sick, and weeds states   
-    "max_steps_dehydrated": UserSettableParameter("number", "Maximum number of steps in a dehydrated state", 1000, 1, 100000),
-    "max_steps_sick": UserSettableParameter("number", "Maximum number of steps in the sick state", 1000, 1, 100000),
-    "max_steps_weeds": UserSettableParameter("number", "Maximum number of steps in the weeds state", 1000, 1, 100000),
+    # Water, sick, and weeds states
+    "max_water_level": UserSettableParameter("number", "A crops maximum water level (in steps)", 50000, 1, 100000),   
+    "max_steps_dehydrated": UserSettableParameter("number", "Maximum number of steps in a dehydrated state", 500, 1, 100000),
+    "max_steps_sick": UserSettableParameter("number", "Maximum number of steps in the sick state", 500, 1, 100000),
+    "max_steps_weeds": UserSettableParameter("number", "Maximum number of steps in the weeds state", 500, 1, 100000),
     # Seed crop parameters
     "seed_sick_probability": UserSettableParameter("number", "Probability of seed getting sick", 0.001, 0, 1),
     "seed_weeds_probability": UserSettableParameter("number", "Probability of seed getting weeds", 0.0001, 0, 1),
-    "steps_seed_to_growing": UserSettableParameter("number", "Steps between a crop's seed and growing state", 2000, 1, 100000),
+    "steps_seed_to_growing": UserSettableParameter("number", "Steps between a crop's seed and growing state", 1000, 1, 100000),
     # Growing crop parameters
     "growing_sick_probability": UserSettableParameter("number", "Probability of growing getting sick", 0.001, 0, 1),
     "growing_weeds_probability": UserSettableParameter("number", "Probability of growing getting weeds", 0.0001, 0, 1),
-    "steps_growing_to_flowering": UserSettableParameter("number", "Steps between a crop's growing and flowering state", 2000, 1, 100000),
+    "steps_growing_to_flowering": UserSettableParameter("number", "Steps between a crop's growing and flowering state", 1000, 1, 100000),
     # Flowering crop parameters
     "flowering_sick_probability": UserSettableParameter("number", "Probability of flowering getting sick", 0.001, 0, 1),
     "flowering_weeds_probability": UserSettableParameter("number", "Probability of flowering getting weeds", 0.0001, 0, 1),
-    "steps_flowering_to_harvestable": UserSettableParameter("number", "Steps between a crop's flowering and harvestable state", 2000, 1, 100000),
+    "steps_flowering_to_harvestable": UserSettableParameter("number", "Steps between a crop's flowering and harvestable state", 1000, 1, 100000),
     # Harvestable crop parameters
     "harvestable_sick_probability": UserSettableParameter("number", "Probability of harvestable getting sick", 0.001, 0, 1),
     "harvestable_weeds_probability": UserSettableParameter("number", "Probability of harvestable getting weeds", 0.0001, 0, 1),
-    "steps_harvestable_to_dead": UserSettableParameter("number", "Maximum number of steps that a crop can be in the harvestable state before dying", 1000, 1, 100000),
+    "steps_harvestable_to_dead": UserSettableParameter("number", "Maximum number of steps that a crop can be in the harvestable state before dying", 500, 1, 100000),
 }
 
 server = ModularServer(

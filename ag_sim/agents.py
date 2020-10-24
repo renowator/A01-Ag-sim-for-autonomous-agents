@@ -192,7 +192,7 @@ class PassiveAgent(Agent):
         # Number of steps that a crop can live without getting dehydrated
         self.water_level = 0
         self.max_steps_dehydrated = model_params["max_steps_dehydrated"]
-        self.max_water_level = 100
+        self.max_water_level = model_params["max_water_level"]
 
         # Maximum number of steps in sick and weeds states
         self.max_steps_sick = model_params["max_steps_sick"]
