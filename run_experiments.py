@@ -35,7 +35,7 @@ Change these parameters to perform different experiments.
 '''
 def set_variable_params():
     variable_params = {
-    "active_agents" : range(1,1,1)
+    "active_agents" : range(1,2,1)
     }
     return variable_params
 
@@ -47,8 +47,8 @@ Parameters are only set here if they have not been set as a variable parameter.
 def set_fixed_params():
 
     # Quick params for if you want no differences between states
-    steps_between_states = 2000
-    max_steps_bad_state = 1000
+    steps_between_states = 1000
+    max_steps_bad_state = 500
     sick_prob = 0.0003
     weeds_prob = 0.0003
 
@@ -57,6 +57,8 @@ def set_fixed_params():
     "running_condition" : True,                 # Condition for when the model should be shut of (True = no condition)
     # "active_agents": 10,                       # Number of active agents ("farming robots")
     "com_protocol": "Helper-Based protocol",   # Cooperation protocol used between agents
+
+    "max_water_level" : steps_between_states,
     "max_steps_dehydrated": max_steps_bad_state,            # Threshold below which crops start drying out [1-100]
     "max_steps_sick" : max_steps_bad_state,
     "max_steps_weeds" : max_steps_bad_state,
@@ -96,7 +98,7 @@ batch_run = BatchRunner(AgSimulator,
                         variable_params,
                         fixed_params,
                         iterations=1,
-                        max_steps=100,
+                        max_steps=1000,
                         model_reporters={
                             "harvest_score": get_harvest_score,
                             # "computed_harvest_score" : compute_harvest_score
