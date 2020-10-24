@@ -187,12 +187,16 @@ class PassiveAgent(Agent):
         self.agent_type = 'PASSIVE'
         self.machine = PassiveAgentStateMachine()
         self.time_at_current_state = 0
+        self.time_at_prev_healthy_state = 0
         self.taken = 0
 
-        # Water level of the crop [0-100]. Initialized at 50 when seed is planted.
-        # Crops will start to die whenever water_level is below water_threshold
+        # Set back a state some steps as a penalty <-- currently not used (set to 0)
+        self.penalty_for_dry_sick_weeds = 0
+
+        # Number of steps that a crop can live without getting dehydrated
         self.water_level = 0
-        self.water_threshold = model_params["water_threshold"]
+        self.max_steps_dehydrated = model_params["max_steps_dehydrated"]
+        self.max_water_level = 100
 
         # Maximum number of steps in sick and weeds states
         self.max_steps_sick = model_params["max_steps_sick"]
@@ -259,7 +263,7 @@ class PassiveAgent(Agent):
     def sow(self):
         if (self.machine.current_state == self.machine.plowed):
             self.time_at_current_state = 0
-            self.water_level = 50
+            self.water_level = self.max_water_level
             self.machine.sow()
 
     '''
@@ -269,19 +273,19 @@ class PassiveAgent(Agent):
     def cure(self):
         # Seed
         if (self.machine.current_state == self.machine.seed_sick):
-            self.time_at_current_state = 0
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
             self.machine.sick_seed_recovery()
         # growing
         if (self.machine.current_state == self.machine.growing_sick):
-            self.time_at_current_state = 0
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
             self.machine.sick_growing_recovery()
         # Flowering
         if (self.machine.current_state == self.machine.flowering_sick):
-            self.time_at_current_state = 0
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
             self.machine.sick_flowering_recovery()
         # Harvestable
         if (self.machine.current_state == self.machine.harvestable_sick):
-            self.time_at_current_state = 0
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
             self.machine.sick_harvestable_recovery()
 
     '''
@@ -291,19 +295,19 @@ class PassiveAgent(Agent):
     def kill_weeds(self):
         # Seed
         if self.machine.current_state == self.machine.seed_weeds:
-            self.time_at_current_state = 0
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
             self.machine.weeds_seed_recovery()
         # growing
         if self.machine.current_state == self.machine.growing_weeds:
-            self.time_at_current_state = 0
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
             self.machine.weeds_growing_recovery()
         # Flowering
         if self.machine.current_state == self.machine.flowering_weeds:
-            self.time_at_current_state = 0
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
             self.machine.weeds_flowering_recovery()
         # Harvestable
         if self.machine.current_state == self.machine.harvestable_weeds:
-            self.time_at_current_state = 0
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
             self.machine.weeds_harvestable_recovery()
 
     '''
@@ -311,8 +315,26 @@ class PassiveAgent(Agent):
     '''
 
     def water(self):
-        if self.machine.current_state in self.machine.waterable_states:
-            self.water_level = 100
+        # Seed
+        if self.machine.current_state == self.machine.seed_dry:
+            self.water_level = self.max_water_level
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.machine.dry_seed_recovery()
+        # growing
+        if self.machine.current_state == self.machine.growing_weeds:
+            self.water_level = self.max_water_level
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.machine.dry_growing_recovery()
+        # Flowering
+        if self.machine.current_state == self.machine.flowering_weeds:
+            self.water_level = self.max_water_level
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.machine.dry_flowering_recovery()
+        # Harvestable
+        if self.machine.current_state == self.machine.harvestable_weeds:
+            self.water_level = self.max_water_level
+            self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds # Subtract a state progress penalty
+            self.machine.dry_harvestable_recovery()
 
     '''
     Interaction function for the harvesting of crops
@@ -336,7 +358,7 @@ class PassiveAgent(Agent):
 
     def step(self):
         self.time_at_current_state += 1
-        self.water_level -= 0.001
+        self.water_level -= 1
         # TODO: Implement random variability in state transitions
         switcher = {
                     # Seed
@@ -378,21 +400,20 @@ class PassiveAgent(Agent):
             self.time_at_current_state = 0
             self.machine.seed_grown()
         # Dry out if there is not enough water
-        elif (self.water_level < self.water_threshold):
+        elif (self.water_level <= 0):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.dry_seed()
         # Randomly get sick
         elif (self.random.random() < self.seed_sick_probability):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.sick_seed()
         # Randomly get weeds
         elif (self.random.random() < self.seed_weeds_probability):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.weeds_seed()
-
-    '''
-    Independent growing state transitions
-    '''
 
     def when_growing(self):
         # If enough time has passed, go to the flowering state
@@ -400,15 +421,18 @@ class PassiveAgent(Agent):
             self.time_at_current_state = 0
             self.machine.growing_to_flowering()
         # Dry out if there is not enough water
-        elif (self.water_level < self.water_threshold):
+        elif (self.water_level <= 0):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.dry_growing()
         # Randomly get sick
         elif (self.random.random() < self.growing_sick_probability):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.sick_growing()
         # Randomly get weeds
         elif (self.random.random() < self.growing_weeds_probability):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.weeds_growing()
 
@@ -418,23 +442,20 @@ class PassiveAgent(Agent):
             self.time_at_current_state = 0
             self.machine.flowering_to_harvestable()
         # Dry out if there is not enough water
-        elif (self.water_level < self.water_threshold):
+        elif (self.water_level <= 0):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.dry_flowering()
         # Randomly get sick
         elif (self.random.random() < self.flowering_sick_probability):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.sick_flowering()
         # Randomly get weeds
         elif (self.random.random() < self.flowering_weeds_probability):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.weeds_flowering()
-
-
-
-    '''
-    Independent transitions from the harvestable state
-    '''
 
     def when_harvestable(self):
         # Die if too much time has passed without being harvested
@@ -442,15 +463,18 @@ class PassiveAgent(Agent):
             self.time_at_current_state = 0
             self.machine.harvestable_to_dead()
         # Dry out if there is not enough water
-        elif (self.water_level < self.water_threshold):
+        elif (self.water_level <= 0):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.dry_harvestable()
         # Randomly get sick
         elif (self.random.random() < self.harvestable_sick_probability):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.sick_harvestable()
         # Randomly get weeds
         elif (self.random.random() < self.harvestable_weeds_probability):
+            self.time_at_prev_healthy_state = self.time_at_current_state
             self.time_at_current_state = 0
             self.machine.weeds_harvestable()
 
@@ -463,40 +487,25 @@ class PassiveAgent(Agent):
     '''
 
     def when_drying(self):
-        recovery = False
-        dying = False
+        dying_because_dehydrated = False
 
-        # Check if the crop was watered and should return to a non-drying state
-        if self.water_level > self.water_threshold:
-            recovery = True
-
-        # Random probability for if the plant should die. Probability will go up and if the crop has been in the drying state
-        # for as many steps as the water threshold is high, probability of dying will be 100%
-        if self.random.random() < (self.time_at_current_state / self.water_threshold):
-            dying = True
+        # Die if the crop is dry for too long
+        if self.time_at_current_state > self.max_steps_dehydrated:
+            dying_because_dehydrated = True
 
         # Seed
         if self.machine.current_state == self.machine.seed_dry:
-            if recovery:
-                self.time_at_current_state = 0  # Reset the time to 0 as a penalty for drying out
-                self.machine.dry_seed_recovery()
-            if dying:
+            if dying_because_dehydrated:
                 self.time_at_current_state = 0
                 self.machine.dry_seed_death()
         # Growing
         if self.machine.current_state == self.machine.growing_dry:
-            if recovery:
-                self.time_at_current_state = 0  # Reset the time to 0 as a penalty for drying out
-                self.machine.dry_growing_recovery()
-            if dying:
+            if dying_because_dehydrated:
                 self.time_at_current_state = 0
                 self.machine.dry_growing_death()
         # Flowering
         if self.machine.current_state == self.machine.flowering_dry:
-            if recovery:
-                self.time_at_current_state = 0  # Reset the time to 0 as a penalty for drying out
-                self.machine.dry_flowering_recovery()
-            if dying:
+            if dying_because_dehydrated:
                 self.time_at_current_state = 0
                 self.machine.dry_flowering_death()
 
@@ -507,10 +516,9 @@ class PassiveAgent(Agent):
     Independent transition function for sick states
     '''
     def when_sick(self):
-        # Random probability for if the plant should die. Probability will go up and if the crop has been
-        # in the sick state for the maximum number of steps, probability of dying will be 100%
         dying_because_sick = False
-        # if self.random.random() < (self.time_at_current_state / self.max_steps_sick):
+
+        # Die if the crop is sick for too long
         if self.time_at_current_state >= self.max_steps_sick:
             dying_because_sick = True
 
@@ -536,10 +544,9 @@ class PassiveAgent(Agent):
     '''
     def when_weeds(self):
 
-        # Random probability for if the plant should die. Probability will go up and if the crop has been
-        # in the weeds state for the maximum number of steps, probability of dying will be 100%
+        # Die if the crop has weeds for too long
         dying_because_weeds = False
-        if self.random.random() < (self.time_at_current_state / self.max_steps_weeds):
+        if self.time_at_current_state >= self.max_steps_weeds:
             dying_because_weeds = True
 
         # Seed

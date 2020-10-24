@@ -35,7 +35,7 @@ Change these parameters to perform different experiments.
 '''
 def set_variable_params():
     variable_params = {
-    "active_agents" : range(1,5,1)
+    "active_agents" : range(1,1,1)
     }
     return variable_params
 
@@ -45,34 +45,41 @@ Function set_fixed_params sets all the fixed model parameters for the experiment
 Parameters are only set here if they have not been set as a variable parameter.
 '''
 def set_fixed_params():
+
+    # Quick params for if you want no differences between states
+    steps_between_states = 2000
+    max_steps_bad_state = 1000
+    sick_prob = 0.0003
+    weeds_prob = 0.0003
+
     fixed_params = {
     # General parameters
     "running_condition" : True,                 # Condition for when the model should be shut of (True = no condition)
     # "active_agents": 10,                       # Number of active agents ("farming robots")
     "com_protocol": "Helper-Based protocol",   # Cooperation protocol used between agents
-    "water_threshold": 20,            # Threshold below which crops start drying out [1-100]
-    "max_steps_sick" : 50,
-    "max_steps_weeds" : 50,
+    "max_steps_dehydrated": max_steps_bad_state,            # Threshold below which crops start drying out [1-100]
+    "max_steps_sick" : max_steps_bad_state,
+    "max_steps_weeds" : max_steps_bad_state,
 
     # Seed crop parameters
-    "seed_sick_probability": 0.01,
-    "seed_weeds_probability": 0.01,
-    "steps_seed_to_growing": 100,
+    "seed_sick_probability": sick_prob,
+    "seed_weeds_probability": weeds_prob,
+    "steps_seed_to_growing": steps_between_states,
 
     # Growing crop parameters
-    "growing_sick_probability" : 0.01,
-    "growing_weeds_probability" : 0.01,
-    "steps_growing_to_flowering": 100,
+    "growing_sick_probability" : sick_prob,
+    "growing_weeds_probability" : weeds_prob,
+    "steps_growing_to_flowering": steps_between_states,
 
     # Flowering crop parameters
-    "flowering_sick_probability" : 0.01,
-    "flowering_weeds_probability": 0.01,
-    "steps_flowering_to_harvestable": 100,
+    "flowering_sick_probability" : sick_prob,
+    "flowering_weeds_probability": weeds_prob,
+    "steps_flowering_to_harvestable": steps_between_states,
     
     # Harvestable crop parameters
-    "harvestable_sick_probability": 0.01,
-    "harvestable_weeds_probability": 0.01,
-    "steps_harvestable_to_dead" : 100,
+    "harvestable_sick_probability": sick_prob,
+    "harvestable_weeds_probability": weeds_prob,
+    "steps_harvestable_to_dead" : steps_between_states,
     }
     return fixed_params
 
