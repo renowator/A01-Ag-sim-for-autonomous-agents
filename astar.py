@@ -135,16 +135,19 @@ def solve(start,endArray):
     reversePath = len(shortest)
 
     print(shortest)
-    if len(shortest) > 1:
-        while reversePath != 0:
-            reversePath -= 1
-            reverseTemp.append(shortest[reversePath])
+    if shortest:
+        if len(shortest) > 1:
+            while reversePath != 0:
+                reversePath -= 1
+                reverseTemp.append(shortest[reversePath])
 
-        for element in reverseTemp:
-            correctedElement = Reverse(element)
-            final.append(correctedElement)
-    elif len(shortest) == 1:
-        final.append(Reverse(shortest[0]))
+            for element in reverseTemp:
+                correctedElement = Reverse(element)
+                final.append(correctedElement)
+        elif len(shortest) == 1:
+            final.append(Reverse(shortest[0]))
+    else:
+        return None
 
     print("Final: ",final)
     return final
