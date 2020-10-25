@@ -228,7 +228,7 @@ class PassiveAgent(Agent):
     def interact(self, agent):
         if (agent.agent_type == 'ACTIVE'):
             switcher = {'plow': self.plow, 'seeder': self.sow, 'sprayer': self.cure, 'wacker': self.kill_weeds,
-                        'irrigator': self.water, 'harvester': self.harvest}
+                        'irrigator': self.water, 'harvester': self.harvest(self.model)}
             func = switcher.get(agent.current_tool, lambda: None)
             if (func is not None):
                 func()
@@ -346,8 +346,9 @@ class PassiveAgent(Agent):
     Interaction function for the harvesting of crops
     '''
 
-    def harvest(self):
+    def harvest(self, model):
         if (self.machine.current_state == self.machine.harvestable):
+            model.increase_harvest_score()
             self.time_at_current_state = 0
             self.machine.harvest()
 

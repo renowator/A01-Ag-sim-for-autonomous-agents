@@ -19,15 +19,6 @@ import matplotlib.pyplot as plt
 def get_harvest_score(model):
     return model.harvest_score
 
-def compute_harvest_score(model):
-    agent_states = [agent.machine.current_state for agent in model.schedule._agents]
-    harvest_score = 0
-    for state in agent_states:
-        if state == "harvested":
-            harvest_score += 1
-    return harvest_score
-
-
 
 '''
 Function set_variable_params sets all the model parameters that have to be varied in the experiments. 
@@ -35,7 +26,7 @@ Change these parameters to perform different experiments.
 '''
 def set_variable_params():
     variable_params = {
-    "active_agents" : range(1,2,1)
+    "active_agents" : range(19,20,1)
     }
     return variable_params
 
@@ -47,7 +38,7 @@ Parameters are only set here if they have not been set as a variable parameter.
 def set_fixed_params():
 
     # Quick params for if you want no differences between states
-    steps_between_states = 1000
+    steps_between_states = 20
     max_steps_bad_state = 500
     sick_prob = 0.0003
     weeds_prob = 0.0003
@@ -101,7 +92,6 @@ batch_run = BatchRunner(AgSimulator,
                         max_steps=1000,
                         model_reporters={
                             "harvest_score": get_harvest_score,
-                            # "computed_harvest_score" : compute_harvest_score
                             },
                         agent_reporters={"pos": "pos"}
                         )
@@ -111,17 +101,18 @@ batch_run.run_all()
 
 #%%
 # Get all agent data
-agent_data = batch_run.get_agent_vars_dataframe()
-print(agent_data.head())
+# agent_data = batch_run.get_agent_vars_dataframe()
+# print(agent_data.head())
 
 #%%
 # Get all model data
 model_data = batch_run.get_model_vars_dataframe()
-print(model_data.head())
+interesting_columns = ["com_protocol", "active_agents", "harvest_score"]
+print(model_data[interesting_columns])
 
 
 
-plt.scatter(model_data.active_agents, model_data.harvest_score)
+# plt.scatter(model_data.active_agents, model_data.harvest_score)
 
 
 # %%

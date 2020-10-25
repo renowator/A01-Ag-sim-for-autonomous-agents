@@ -78,7 +78,7 @@ def ag_sim_portrayal(agent):
         portrayal["w"] = 1
         portrayal["h"] = 1
     elif type(agent) is FarmAgent:
-        portrayal["Color"] = ["#000000", "#000000", "#000000"]
+        portrayal["Color"] = ["#8a0000", "#8a0000", "#8a0000"]
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
         portrayal["Layer"] = 1

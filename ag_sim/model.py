@@ -163,8 +163,9 @@ class AgSimulator(Model):
         # Set a shut off condition (used with the BatchRunner to run multiple experiments)
         self.running = model_params.get("running_condition", True)
 
-        # Initialize the harvest score for this run
+        # Initialize the model's variables that measure performance
         self.harvest_score = 0
+        self.steps_in_dehydrated_state = 0
 
         # Set all model parameters from **model_params;
         # second value is the default for when the requested parameter is not set
@@ -178,11 +179,11 @@ class AgSimulator(Model):
         self.width = width
         self.grid = MultiGrid(self.height, self.width, False)
 
-        # TODO: Specify data collection points
+        # Specify the data that has to be collected during the run
         self.datacollector = DataCollector(
-            # model_reporters={
-            #     "harvest_score" : self.harvest_score
-            # },
+            model_reporters={
+                "harvest_score" : self.get_harvest_score
+            },
             agent_reporters={
                 "X": lambda a: a.pos[0],
                 "Y": lambda a: a.pos[1]
@@ -229,10 +230,18 @@ class AgSimulator(Model):
         # Test print
         print("I just made a step!")
 
+
+    def increase_harvest_score(self):
+        self.harvest_score += 1
+        print("increased harvest score to: " + str(self.harvest_score))
+
+    def get_harvest_score(self, model):
+        return model.harvest_score
+
     '''
     *** run_model defines the end condition for simulation and overwrites Model.run_model
     '''
-
+    
     def run_model(self, step_count=4800):
         for i in range(step_count):
             self.step()

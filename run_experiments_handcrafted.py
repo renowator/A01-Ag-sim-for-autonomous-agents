@@ -2,41 +2,56 @@
 The file run_without_visuals.py is used in order to quickly run a lot of experiments
 with the model.
 '''
+#%%
 # Imports
 from collections import defaultdict
 from ag_sim.model import AgSimulator
 from ag_sim.agents import PassiveAgent, ActiveAgent, PassiveAgentPerception, ActiveAgentPlanning, PassiveAgentStateMachine, FarmAgent
 
 '''
-Function set_model_params sets all the model parameters. Change these parameters to perform different experiments.
+Function set_fixed_params sets all the fixed model parameters for the experiments. 
+Parameters are only set here if they have not been set as a variable parameter.
 '''
 def set_model_params():
-    model_params = {
-    # General parameters
-    "active_agents": 10,                        # Number of active agents ("farming robots")
-    "com_protocol": "Helper-Based protocol",    # Cooperation protocol used between agents
-    "water_threshold": 20,                      # Threshold below which crops start drying out [1-100]
 
-    # Baby crop parameters
-    "baby_sick_probability": 0.01,
-    "baby_weeds_probability": 0.01,
-    "steps_baby_to_growing": 100,
+    # Quick params for if you want no differences between states
+    steps_between_states = 20
+    max_steps_bad_state = 500
+    sick_prob = 0.0003
+    weeds_prob = 0.0003
+
+    fixed_params = {
+    # General parameters
+    "running_condition" : True,                 # Condition for when the model should be shut of (True = no condition)
+    "active_agents": 20,                       # Number of active agents ("farming robots")
+    "com_protocol": "Helper-Based protocol",   # Cooperation protocol used between agents
+
+    "max_water_level" : steps_between_states,
+    "max_steps_dehydrated": max_steps_bad_state,
+    "max_steps_sick" : max_steps_bad_state,
+    "max_steps_weeds" : max_steps_bad_state,
+
+    # Seed crop parameters
+    "seed_sick_probability": sick_prob,
+    "seed_weeds_probability": weeds_prob,
+    "steps_seed_to_growing": steps_between_states,
 
     # Growing crop parameters
-    "growing_sick_probability" : 0.01,
-    "growing_weeds_probability" : 0.01,
-    "steps_growing_to_flowering": 100,
+    "growing_sick_probability" : sick_prob,
+    "growing_weeds_probability" : weeds_prob,
+    "steps_growing_to_flowering": steps_between_states,
 
     # Flowering crop parameters
-    "flowering_sick_probability" : 0.01,
-    "flowering_weeds_probability": 0.01,
-    "steps_flowering_to_harvestable": 100,
+    "flowering_sick_probability" : sick_prob,
+    "flowering_weeds_probability": weeds_prob,
+    "steps_flowering_to_harvestable": steps_between_states,
     
     # Harvestable crop parameters
-    "harvestable_sick_probability": 0.01,
-    "harvestable_weeds_probability": 0.01,
+    "harvestable_sick_probability": sick_prob,
+    "harvestable_weeds_probability": weeds_prob,
+    "steps_harvestable_to_dead" : steps_between_states,
     }
-    return model_params
+    return fixed_params
 
 '''
 Function run_experiment runs a single experiment
@@ -56,8 +71,8 @@ def run_experiment(num_runs, max_steps, exp_number=0):
         # TODO: Partially reset the model so that all agents are in their starting state
 
         agent_coords = model.datacollector.get_agent_vars_dataframe()
-        plt = agent_coords.plot()
-        plt.show()
+        model_results = model.datacollector.get_model_vars_dataframe()
+        print(model_results)
 
     # TODO: Return the collected data from this experiment
     return
@@ -81,7 +96,11 @@ def run_multiple_experiments():
 
 
 # Use the line below to run a single experiment
-run_experiment(1, 5)
+run_experiment(1, 1000)
+#%%
+
 
 # Use the line below to run multiple experiments
 # run_multiple_experiments()
+
+#%%
