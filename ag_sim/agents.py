@@ -182,8 +182,14 @@ class PassiveAgent(Agent):
         self.pos = pos
         self.agent_type = 'PASSIVE'
         self.machine = PassiveAgentStateMachine()
+
+        # State times that need to be saved
         self.time_at_current_state = 0
         self.time_at_prev_healthy_state = 0
+        self.steps_in_dehydrated_state = 0
+        self.steps_in_sick_state = 0
+        self.steps_in_weeds_state = 0
+
         self.taken = 0
 
         # Set back a state some steps as a penalty <-- currently not used (set to 0)
@@ -265,25 +271,23 @@ class PassiveAgent(Agent):
     '''
 
     def cure(self):
+
+        # Add the time spent in this sick state to the crop's total time in sick states
+        self.steps_in_sick_state += self.time_at_current_state
+        # Reset the state time to the time in the healthy state when it got sick, and potentially subtract a time penalty
+        self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds
+
         # Seed
         if (self.machine.current_state == self.machine.seed_sick):
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.sick_seed_recovery()
         # growing
         if (self.machine.current_state == self.machine.growing_sick):
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.sick_growing_recovery()
         # Flowering
         if (self.machine.current_state == self.machine.flowering_sick):
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.sick_flowering_recovery()
         # Harvestable
         if (self.machine.current_state == self.machine.harvestable_sick):
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.sick_harvestable_recovery()
 
     '''
@@ -291,25 +295,23 @@ class PassiveAgent(Agent):
     '''
 
     def kill_weeds(self):
+
+        # Add the time spent in this weeds state to the crop's total time in weeds states
+        self.steps_in_weeds_state += self.time_at_current_state
+        # Reset the state time to the time in the healthy state when it got weeds, and potentially subtract a time penalty
+        self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds
+
         # Seed
         if self.machine.current_state == self.machine.seed_weeds:
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.weeds_seed_recovery()
         # growing
         if self.machine.current_state == self.machine.growing_weeds:
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.weeds_growing_recovery()
         # Flowering
         if self.machine.current_state == self.machine.flowering_weeds:
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.weeds_flowering_recovery()
         # Harvestable
         if self.machine.current_state == self.machine.harvestable_weeds:
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.weeds_harvestable_recovery()
 
     '''
@@ -317,29 +319,24 @@ class PassiveAgent(Agent):
     '''
 
     def water(self):
+        # Add the time spent in this dehydrated state to the crop's total time in dehydrated states
+        self.steps_in_dehydrated_state += self.time_at_current_state
+        # Reset the state time to the time in the healthy state when it got dehydrated, and potentially subtract a time penalty
+        self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds
+        # Reset the water level to the maximum
+        self.water_level = self.max_water_level
+
         # Seed
         if self.machine.current_state == self.machine.seed_dry:
-            self.water_level = self.max_water_level
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.dry_seed_recovery()
         # growing
         if self.machine.current_state == self.machine.growing_weeds:
-            self.water_level = self.max_water_level
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.dry_growing_recovery()
         # Flowering
         if self.machine.current_state == self.machine.flowering_weeds:
-            self.water_level = self.max_water_level
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.dry_flowering_recovery()
         # Harvestable
         if self.machine.current_state == self.machine.harvestable_weeds:
-            self.water_level = self.max_water_level
-            self.time_at_current_state = self.time_at_prev_healthy_state - \
-                self.penalty_for_dry_sick_weeds  # Subtract a state progress penalty
             self.machine.dry_harvestable_recovery()
 
     '''
@@ -348,7 +345,14 @@ class PassiveAgent(Agent):
 
     def harvest(self, model):
         if (self.machine.current_state == self.machine.harvestable):
+
+            # Increase the harvest and quality measurements
             model.increase_harvest_score()
+            model.increase_total_steps_dehydrated(self.steps_in_dehydrated_state)
+            model.increase_total_steps_sick(self.steps_in_sick_state)
+            model.increase_total_steps_weeds(self.steps_in_weeds_state)
+
+            # Reset the state time and go to the harvested state
             self.time_at_current_state = 0
             self.machine.harvest()
 
