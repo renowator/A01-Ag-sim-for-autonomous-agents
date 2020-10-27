@@ -677,6 +677,8 @@ class ActiveAgent(Agent):
                     self.model.knowledgeMap.update(
                         PassiveAgentPerception(neighbor_obj[0]))
 
+
+
     # This function is used to execute a move of an agent
     def executeMove(self):
         my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
@@ -684,6 +686,8 @@ class ActiveAgent(Agent):
 
         if plan_count > 0:
             self.model.grid.move_agent(self, my_plans[0].pos)
+        else:
+             self.target = None
 
     # Check if the tool is good for the field next to me
     # TODO: Add other tools and other field states
@@ -895,10 +899,10 @@ class ActiveAgent(Agent):
 
         # Then update the perception of the agent(s)
         self.update_perception()
-
-        # Then check if this was the last step. If it was, check if the agent is next to the target and perform the action.
-        plan_count = len(self.model.knowledgeMap.planAgents[self.unique_id])
-        if plan_count == 0:
+        if self.protocol == "Helper-Based protocol":
+          # Then check if this was the last step. If it was, check if the agent is next to the target and perform the action.
+          plan_count = len(self.model.knowledgeMap.planAgents[self.unique_id])
+          if plan_count == 0:
             # Recalculate all heuristics after I have reached the first point of interest (ONLY ONCE until fieldsToAttend is empty again)
             if self.recalculateHeur == 0 and len(self.fieldsToAttend) > 1:
                 self.recalculateHeuristics()
@@ -906,14 +910,18 @@ class ActiveAgent(Agent):
             neighbors = self.model.grid.get_neighborhood(
                 self.pos, False, False)
             for neighbor in neighbors:
+                neighborAgent = self.model.schedule.getPassiveAgentOnPos(neighbor)
+                if isinstance(neighborAgent, PassiveAgent) and self.toolVSfield(neighborAgent.machine.current_state.value):
+                    neighborAgent.interact(self)
+                    neighborAgent.taken = 0
                 # Get only passive aggents in neighborhood
                 if len(self.fieldsToAttend) > 1:
                     for item in self.fieldsToAttend:
                         if item[1].pos == neighbor:
-                            neighborPassive = self.model.schedule.getPassiveAgentOnPos(
-                                neighbor)
-                            neighborPassive.interact(self)
-                            neighborPassive.taken = 0
+                            #neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                            #    neighbor)
+                            #neighborPassive.interact(self)
+                            #neighborPassive.taken = 0
                             self.fieldsToAttend.remove(self.fieldsToAttend[0])
                             break
                 elif len(self.fieldsToAttend) == 1:
@@ -923,7 +931,15 @@ class ActiveAgent(Agent):
                         neighborPassive.interact(self)
                         neighborPassive.taken = 0
                         self.fieldsToAttend.clear()
-
+        elif self.protocol == "Simple protocol":
+          neighbors = self.model.grid.get_neighborhood(
+              self.pos, False, False)
+          for neighbor in neighbors:
+              neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                  neighbor)
+              if isinstance(neighborPassive, PassiveAgent) and self.toolVSfield(neighborPassive.machine.current_state.value):
+                  neighborPassive.interact(self)
+                  break
         # And finally update the perception of the agent(s) once more to check in the knowledgeMap that the action has been performed
         self.update_perception()
 
