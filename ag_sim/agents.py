@@ -275,7 +275,8 @@ class PassiveAgent(Agent):
         # Add the time spent in this sick state to the crop's total time in sick states
         self.steps_in_sick_state += self.time_at_current_state
         # Reset the state time to the time in the healthy state when it got sick, and potentially subtract a time penalty
-        self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds
+        self.time_at_current_state = self.time_at_prev_healthy_state - \
+            self.penalty_for_dry_sick_weeds
 
         # Seed
         if (self.machine.current_state == self.machine.seed_sick):
@@ -299,7 +300,8 @@ class PassiveAgent(Agent):
         # Add the time spent in this weeds state to the crop's total time in weeds states
         self.steps_in_weeds_state += self.time_at_current_state
         # Reset the state time to the time in the healthy state when it got weeds, and potentially subtract a time penalty
-        self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds
+        self.time_at_current_state = self.time_at_prev_healthy_state - \
+            self.penalty_for_dry_sick_weeds
 
         # Seed
         if self.machine.current_state == self.machine.seed_weeds:
@@ -322,7 +324,8 @@ class PassiveAgent(Agent):
         # Add the time spent in this dehydrated state to the crop's total time in dehydrated states
         self.steps_in_dehydrated_state += self.time_at_current_state
         # Reset the state time to the time in the healthy state when it got dehydrated, and potentially subtract a time penalty
-        self.time_at_current_state = self.time_at_prev_healthy_state - self.penalty_for_dry_sick_weeds
+        self.time_at_current_state = self.time_at_prev_healthy_state - \
+            self.penalty_for_dry_sick_weeds
         # Reset the water level to the maximum
         self.water_level = self.max_water_level
 
@@ -348,7 +351,8 @@ class PassiveAgent(Agent):
 
             # Increase the harvest and quality measurements
             model.increase_harvest_score()
-            model.increase_total_steps_dehydrated(self.steps_in_dehydrated_state)
+            model.increase_total_steps_dehydrated(
+                self.steps_in_dehydrated_state)
             model.increase_total_steps_sick(self.steps_in_sick_state)
             model.increase_total_steps_weeds(self.steps_in_weeds_state)
 
@@ -677,9 +681,8 @@ class ActiveAgent(Agent):
                     self.model.knowledgeMap.update(
                         PassiveAgentPerception(neighbor_obj[0]))
 
-
-
     # This function is used to execute a move of an agent
+
     def executeMove(self):
         my_plans = self.model.knowledgeMap.planAgents[self.unique_id]
         plan_count = len(my_plans)
@@ -687,7 +690,7 @@ class ActiveAgent(Agent):
         if plan_count > 0:
             self.model.grid.move_agent(self, my_plans[0].pos)
         else:
-             self.target = None
+            self.target = None
 
     # Check if the tool is good for the field next to me
     # TODO: Add other tools and other field states
@@ -743,6 +746,43 @@ class ActiveAgent(Agent):
                 self.model.knowledgeMap.update(new_plan)
                 self.model.schedule.add(new_plan)
         near.clear()
+
+    def calculatePriorityTool(self):
+        irrigator = 0
+        plow = 0
+        sprayer = 0
+        wacker = 0
+        harvester = 0
+        seeder = 0
+
+        listOfFieldsFromKnowledge = [
+            obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
+
+        for obj in listOfFieldsFromKnowledge:
+            pointOfInterest = self.model.schedule.getPassiveAgent(
+                obj.unique_id)
+            if pointOfInterest.machine.current_state.value == "start":
+                plow += 1
+            elif pointOfInterest.machine.current_state.value == "plowed":
+                seeder += 1
+            elif pointOfInterest.machine.current_state.value == "seed_dry" or pointOfInterest.machine.current_state.value == "growing_dry" or pointOfInterest.machine.current_state.value == "flowering_dry" or pointOfInterest.machine.current_state.value == "harvestable_dry":
+                irrigator += 1.2
+            elif pointOfInterest.machine.current_state.value == "seed_weeds" or pointOfInterest.machine.current_state.value == "growing_weeds" or pointOfInterest.machine.current_state.value == "flowering_weeds" or pointOfInterest.machine.current_state.value == "harvestable_weeds":
+                wacker += 1.1
+            elif pointOfInterest.machine.current_state.value == "seed_sick" or pointOfInterest.machine.current_state.value == "growing_sick" or pointOfInterest.machine.current_state.value == "flowering_sick" or pointOfInterest.machine.current_state.value == "harvestable_sick":
+                sprayer += 1.3
+            elif pointOfInterest.machine.current_state.value == "harvestable":
+                harvester = 1.5
+
+        priority = list()
+        priority = prioritizeQueue(priority, (plow, "plow"))
+        priority = prioritizeQueue(priority, (seeder, "seeder"))
+        priority = prioritizeQueue(priority, (irrigator, "irrigator"))
+        priority = prioritizeQueue(priority, (wacker, "wacker"))
+        priority = prioritizeQueue(priority, (sprayer, "sprayer"))
+        priority = prioritizeQueue(priority, (harvester, "harvester"))
+
+        return priority
 
     def step(self):
         if self.protocol == "Simple protocol":
@@ -900,46 +940,71 @@ class ActiveAgent(Agent):
         # Then update the perception of the agent(s)
         self.update_perception()
         if self.protocol == "Helper-Based protocol":
-          # Then check if this was the last step. If it was, check if the agent is next to the target and perform the action.
-          plan_count = len(self.model.knowledgeMap.planAgents[self.unique_id])
-          if plan_count == 0:
-            # Recalculate all heuristics after I have reached the first point of interest (ONLY ONCE until fieldsToAttend is empty again)
-            if self.recalculateHeur == 0 and len(self.fieldsToAttend) > 1:
-                self.recalculateHeuristics()
-                self.recalculateHeur = 1
+            # Then check if this was the last step. If it was, check if the agent is next to the target and perform the action.
+            plan_count = len(
+                self.model.knowledgeMap.planAgents[self.unique_id])
+            if plan_count == 0:
+                # Recalculate all heuristics after I have reached the first point of interest (ONLY ONCE until fieldsToAttend is empty again)
+                if self.recalculateHeur == 0 and len(self.fieldsToAttend) > 1:
+                    self.recalculateHeuristics()
+                    self.recalculateHeur = 1
+                neighbors = self.model.grid.get_neighborhood(
+                    self.pos, False, False)
+                for neighbor in neighbors:
+                    neighborAgent = self.model.schedule.getPassiveAgentOnPos(
+                        neighbor)
+                    if isinstance(neighborAgent, PassiveAgent) and self.toolVSfield(neighborAgent.machine.current_state.value):
+                        neighborAgent.interact(self)
+                        neighborAgent.taken = 0
+                    # Get only passive aggents in neighborhood
+                    if len(self.fieldsToAttend) > 1:
+                        for item in self.fieldsToAttend:
+                            if item[1].pos == neighbor:
+                                neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                                    neighbor)
+                                neighborPassive.interact(self)
+                                neighborPassive.taken = 0
+                                self.fieldsToAttend.remove(
+                                    self.fieldsToAttend[0])
+                                break
+                    elif len(self.fieldsToAttend) == 1:
+                        if self.fieldsToAttend[0][1].pos == neighbor:
+                            # If I am at the farm, change the tool
+                            if self.fieldsToAttend[0][1].pos == self.model.farmObject.pos:
+                                priority = self.calculatePriorityTool()
+                                # print(priority)
+                                temp = len(priority) - 1
+                                self.model.farmObject.return_tool(
+                                    self.current_tool)
+                                self.current_tool = None
+                                while temp >= 0:
+                                    test = self.model.farmObject.take_tool(
+                                        priority[temp][1])
+                                    if test == True:
+                                        self.current_tool = priority[temp][1]
+                                        self.fieldsToAttend.clear()
+                                        # print(self.current_tool)
+                                        break
+
+                                    temp -= 1
+
+                            # Else, interact with the field
+                            else:
+                                neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                                    neighbor)
+                                neighborPassive.interact(self)
+                                neighborPassive.taken = 0
+                                self.fieldsToAttend.clear()
+
+        elif self.protocol == "Simple protocol":
             neighbors = self.model.grid.get_neighborhood(
                 self.pos, False, False)
             for neighbor in neighbors:
-                neighborAgent = self.model.schedule.getPassiveAgentOnPos(neighbor)
-                if isinstance(neighborAgent, PassiveAgent) and self.toolVSfield(neighborAgent.machine.current_state.value):
-                    neighborAgent.interact(self)
-                    neighborAgent.taken = 0
-                # Get only passive aggents in neighborhood
-                if len(self.fieldsToAttend) > 1:
-                    for item in self.fieldsToAttend:
-                        if item[1].pos == neighbor:
-                            #neighborPassive = self.model.schedule.getPassiveAgentOnPos(
-                            #    neighbor)
-                            #neighborPassive.interact(self)
-                            #neighborPassive.taken = 0
-                            self.fieldsToAttend.remove(self.fieldsToAttend[0])
-                            break
-                elif len(self.fieldsToAttend) == 1:
-                    if self.fieldsToAttend[0][1].pos == neighbor:
-                        neighborPassive = self.model.schedule.getPassiveAgentOnPos(
-                            neighbor)
-                        neighborPassive.interact(self)
-                        neighborPassive.taken = 0
-                        self.fieldsToAttend.clear()
-        elif self.protocol == "Simple protocol":
-          neighbors = self.model.grid.get_neighborhood(
-              self.pos, False, False)
-          for neighbor in neighbors:
-              neighborPassive = self.model.schedule.getPassiveAgentOnPos(
-                  neighbor)
-              if isinstance(neighborPassive, PassiveAgent) and self.toolVSfield(neighborPassive.machine.current_state.value):
-                  neighborPassive.interact(self)
-                  break
+                neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                    neighbor)
+                if isinstance(neighborPassive, PassiveAgent) and self.toolVSfield(neighborPassive.machine.current_state.value):
+                    neighborPassive.interact(self)
+                    break
         # And finally update the perception of the agent(s) once more to check in the knowledgeMap that the action has been performed
         self.update_perception()
 
@@ -1007,18 +1072,18 @@ class FarmAgent(Agent):
         super().__init__(unique_id, model)
         self.pos = pos
         self.food = 0
-        self.irrigator = 50
-        self.plow = 50
-        self.sprayer = 50
-        self.wacker = 50
-        self.harvester = 50
-        self.seeder = 50
+        self.irrigator = 10
+        self.plow = 10
+        self.sprayer = 10
+        self.wacker = 10
+        self.harvester = 10
+        self.seeder = 10
 
     def sample_stage(self):
         return
 
     def interact(self, agent):
-        #print("Updating agent tool")
+        # print("Updating agent tool")
         tool = agent.current_tool
         if tool != None:
             if tool == 'irrigator':
@@ -1072,7 +1137,7 @@ class FarmAgent(Agent):
             self.harvester -= 1
             agent.current_tool = "harvester"
         # print(agent.unique_id)
-        #print("Now has")
+        # print("Now has")
         # print(agent.current_tool)
 
     def interact2(self, target, tool):  # for the taking and returning of farm equipment
@@ -1094,6 +1159,43 @@ class FarmAgent(Agent):
             return True
         elif target == 'spraying' and self.sprayer > 0:
             self.sprayer -= 1
+            return True
+        else:
+            return False
+
+    def return_tool(self, tool):
+        if tool != None:
+            if tool == 'irrigator':
+                self.irrigator += 1
+            elif tool == 'plow':
+                self.plow += 1
+            elif tool == 'sprayer':
+                self.sprayer += 1
+            elif tool == 'wacker':
+                self.wacker += 1
+            elif tool == 'harvester':
+                self.harvester += 1
+            elif tool == 'seeder':
+                self.seeder += 1
+
+    def take_tool(self, requestedTool):
+        if requestedTool == 'irrigator' and self.irrigator > 0:
+            self.irrigator -= 1
+            return True
+        elif requestedTool == 'plow' and self.plow > 0:
+            self.plow -= 1
+            return True
+        elif requestedTool == 'sprayer' and self.sprayer > 0:
+            self.sprayer -= 1
+            return True
+        elif requestedTool == 'wacker' and self.wacker > 0:
+            self.wacker -= 1
+            return True
+        elif requestedTool == 'harvester' and self.harvester > 0:
+            self.harvester -= 1
+            return True
+        elif requestedTool == 'seeder' and self.seeder > 0:
+            self.seeder -= 1
             return True
         else:
             return False
