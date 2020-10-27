@@ -762,15 +762,18 @@ class ActiveAgent(Agent):
             pointOfInterest = self.model.schedule.getPassiveAgent(
                 obj.unique_id)
             if pointOfInterest.machine.current_state.value == "start":
-                plow += 1
+                plow += 0.75
             elif pointOfInterest.machine.current_state.value == "plowed":
                 seeder += 1
             elif pointOfInterest.machine.current_state.value == "seed_dry" or pointOfInterest.machine.current_state.value == "growing_dry" or pointOfInterest.machine.current_state.value == "flowering_dry" or pointOfInterest.machine.current_state.value == "harvestable_dry":
-                irrigator += 1.2
+                irrigator += 1*(pointOfInterest.time_at_current_state /
+                                pointOfInterest.max_steps_dehydrated)*(1-pointOfInterest.taken)
             elif pointOfInterest.machine.current_state.value == "seed_weeds" or pointOfInterest.machine.current_state.value == "growing_weeds" or pointOfInterest.machine.current_state.value == "flowering_weeds" or pointOfInterest.machine.current_state.value == "harvestable_weeds":
-                wacker += 1.1
+                wacker += 1*(pointOfInterest.time_at_current_state /
+                             pointOfInterest.max_steps_weeds)*(1-pointOfInterest.taken)
             elif pointOfInterest.machine.current_state.value == "seed_sick" or pointOfInterest.machine.current_state.value == "growing_sick" or pointOfInterest.machine.current_state.value == "flowering_sick" or pointOfInterest.machine.current_state.value == "harvestable_sick":
-                sprayer += 1.3
+                sprayer += 1*(pointOfInterest.time_at_current_state /
+                              pointOfInterest.max_steps_sick)*(1-pointOfInterest.taken)
             elif pointOfInterest.machine.current_state.value == "harvestable":
                 harvester = 1.5
 
