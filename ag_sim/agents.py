@@ -667,7 +667,22 @@ class ActiveAgent(Agent):
         # target can be watering, plowing, spraying and to gather or return the needed equipment
         self.targets = None
         self.mode = 'TEST'
-        self.current_tool = 'plow'
+        if self.protocol == "Coordination Cooperative protocol":
+            self.coordinationCheck = 0
+            if self.unique_id % 6 == 0:
+                self.current_tool = "harvester"
+            elif self.unique_id % 6 == 1:
+                self.current_tool = "plow"
+            elif self.unique_id % 6 == 2:
+                self.current_tool = "seeder"
+            elif self.unique_id % 6 == 3:
+                self.current_tool = "irrigator"
+            elif self.unique_id % 6 == 4:
+                self.current_tool = "wacker"
+            elif self.unique_id % 6 == 5:
+                self.current_tool = "sprayer"
+        elif self.protocol == "Helper-Based protocol":
+            self.current_tool = 'plow'
         self.plan = None
         self.target = None  # This variable is used when a target location is set by the agent
         self.stepCount = 0
@@ -941,9 +956,11 @@ class ActiveAgent(Agent):
                                 possibleTarget[1].taken = 1
                                 self.fieldsToAttend.append(
                                     (possibleTarget[0], possibleTarget[1]))
-
-                            # If there is at least a point to attend in the agent's knowledge, get all points it can attend on that row based on the first point he added
-                            elif len(self.fieldsToAttend) != 0 and possibleTarget[1].pos[0] == self.fieldsToAttend[0][1].pos[0]:
+                                self.calculatePath(possibleTarget[1])
+                            # If there is at least a point to attend in the agent's knowledge, get all points it can attend based on the path the agent is going
+                            # Is checking right and left sides of the path
+                            elif len(self.fieldsToAttend) != 0 and (possibleTarget[1].pos[0] == self.model.knowledgeMap.planAgents[self.unique_id][len(self.model.knowledgeMap.planAgents[self.unique_id])-1].pos[0]-1 or
+                                                                    possibleTarget[1].pos[0] == self.model.knowledgeMap.planAgents[self.unique_id][len(self.model.knowledgeMap.planAgents[self.unique_id])-1].pos[0]+1):
                                 possibleTarget[1].taken = 1
                                 self.fieldsToAttend = prioritizeQueue(
                                     self.fieldsToAttend, (possibleTarget[0], possibleTarget[1]))
@@ -961,7 +978,52 @@ class ActiveAgent(Agent):
                         self.calculatePath(self.model.farmObject)
 
         elif self.protocol == "Coordination Cooperative protocol":
-            return
+            # Safety perception check
+            if self.stepCount == 0:
+                self.update_perception()
+                self.stepCount += 1
+            else:
+                if len(self.fieldsToAttend) == 0:
+                    self.recalculateHeur = 0
+                    self.coordinationCheck = 0
+                    self.search = 0
+                    # Get all passiveAgents from the KnowledgeMap
+                    listOfFieldsFromKnowledge = [
+                        obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
+                    queue = list()
+                    for obj in listOfFieldsFromKnowledge:
+                        pointOfInterest = self.model.schedule.getPassiveAgent(
+                            obj.unique_id)
+                        if self.toolVSfield(pointOfInterest.machine.current_state.value):
+                            queue = prioritizeQueue(
+                                queue, (self.heuristic(pointOfInterest, distance(pointOfInterest.pos, self.pos)), pointOfInterest))
+
+                    # Check the status of all agents from the knowledge map
+                    while queue:
+                        possibleTarget = queue[0]
+                        queue.remove(possibleTarget)
+
+                        if possibleTarget[1].taken == 0 and self.toolVSfield(possibleTarget[1].machine.current_state.value):
+                            # If there are no points to attend in the agent's knowledge, add it to its knowledge
+                            if len(self.fieldsToAttend) == 0:
+                                possibleTarget[1].taken = 1
+                                self.fieldsToAttend.append(
+                                    (possibleTarget[0], possibleTarget[1]))
+
+                            # If there is at least a point to attend in the agent's knowledge, get all points it can attend on that row based on the first point he added
+                            elif len(self.fieldsToAttend) != 0 and possibleTarget[1].pos[0] == self.fieldsToAttend[0][1].pos[0]:
+                                possibleTarget[1].taken = 1
+                                self.fieldsToAttend = prioritizeQueue(
+                                    self.fieldsToAttend, (possibleTarget[0], possibleTarget[1]))
+
+                if len(self.model.knowledgeMap.planAgents[self.unique_id]) == 0:
+                    # If there is at least a field it can attend with the current tool, go there.
+                    if len(self.fieldsToAttend) > 0:
+                        moveTo = self.fieldsToAttend[0]
+                        self.calculatePath(moveTo[1])
+
+                if len(self.fieldsToAttend) == 0:
+                    self.coordinationCheck = 1
 
     # This function is used for the advance phase due to the Simultaneous Activation schedule
 
@@ -974,25 +1036,25 @@ class ActiveAgent(Agent):
 
         # Then update the perception of the agent(s)
         self.update_perception()
-        if self.protocol == "Helper-Based protocol":
-            # Then check if this was the last step. If it was, check if the agent is next to the target and perform the action.
-            plan_count = len(
-                self.model.knowledgeMap.planAgents[self.unique_id])
-            if plan_count == 0:
-                # Recalculate all heuristics after I have reached the first point of interest (ONLY ONCE until fieldsToAttend is empty again)
-                if self.recalculateHeur == 0 and len(self.fieldsToAttend) > 1:
-                    self.recalculateHeuristics()
-                    self.recalculateHeur = 1
+
+        if self.protocol == "Helper-Based protocol" or self.protocol == "Coordination Cooperative protocol":
+            # Recalculate all heuristics after I have reached the line with the first point of interest (ONLY ONCE until fieldsToAttend is empty again)
+            if len(self.fieldsToAttend) > 0 and self.pos[0] == self.fieldsToAttend[0][1].pos[0]-1 and self.recalculateHeur == 0 and len(self.fieldsToAttend) > 1:
+                self.recalculateHeuristics()
+                self.recalculateHeur = 1
+
+            # Check neighbor information
             neighbors = self.model.grid.get_neighborhood(
                 self.pos, False, False)
             for neighbor in neighbors:
                 neighborAgent = self.model.schedule.getPassiveAgentOnPos(
                     neighbor)
+
+                # If the neighboring block can be attended and is not taken, interact
                 if isinstance(neighborAgent, PassiveAgent) and self.toolVSfield(neighborAgent.machine.current_state.value) and neighborAgent.taken == 0:
                     neighborAgent.interact(self)
-                    break
 
-                # Get only passive aggents in neighborhood
+                # Also, if the agent has to attend fields, check if the adjacent field has to be attended by this agent
                 if len(self.fieldsToAttend) > 1:
                     for item in self.fieldsToAttend:
                         if item[1].pos == neighbor:
@@ -1000,48 +1062,84 @@ class ActiveAgent(Agent):
                                 neighbor)
                             neighborPassive.interact(self)
                             neighborPassive.taken = 0
-                            self.fieldsToAttend.remove(
-                                self.fieldsToAttend[0])
-                            break
+                            self.fieldsToAttend.remove(item)
 
+                # If there is only one field to attend, it means that it either has to go to farm, or there is actually only one field left to attend
                 elif len(self.fieldsToAttend) == 1:
+
+                    # Check if the field to attend is in the neighboring blocks
                     if self.fieldsToAttend[0][1].pos == neighbor:
-                        # If I am at the farm, change the tool
-                        if self.fieldsToAttend[0][1].pos == self.model.farmObject.pos:
+
+                        # If the field to attend is the farm, and the agent is next to it, change the tool
+                        if self.fieldsToAttend[0][1].pos == self.model.farmObject.pos and self.protocol == "Helper-Based protocol":
+
+                            # Reset search (used for Helper Based-Protocol)
                             self.search = 0
+
+                            # Calculate priority of tools to know which one the agent should try to get
                             priority = self.calculatePriorityTool()
-                            # print(priority)
                             temp = len(priority) - 1
+
+                            # Return the current tool
                             self.model.farmObject.return_tool(
                                 self.current_tool)
+
+                            # Now the agent doesn't have any tool
                             self.current_tool = None
+
+                            # Check which tool from priority is available
                             while temp >= 0:
+
+                                # Check if that tool is actually needed (priority 0 means that the tool is not needed at all)
                                 if priority[temp][0] != 0:
+
+                                    # Check if the tool is available at the farm
                                     test = self.model.farmObject.take_tool(
                                         priority[temp][1])
+
+                                    # If it is available, the tool is "given" to the agent
                                     if test == True:
                                         self.current_tool = priority[temp][1]
                                         self.fieldsToAttend.clear()
-                                        # print(self.current_tool)
                                         break
 
                                 temp -= 1
+
+                            # Clear fieldsToAttend (in case the agent didn't get any tool)
                             self.fieldsToAttend.clear()
-                            print(self.current_tool)
-                        # Else, interact with the field
-                        else:
+
+                        # Else, it means that the field to attend is not the farm, hence interact with it (if it has a tool)
+                        elif self.current_tool != None and self.protocol == "Helper-Based protocol":
                             neighborPassive = self.model.schedule.getPassiveAgentOnPos(
                                 neighbor)
                             neighborPassive.interact(self)
                             neighborPassive.taken = 0
                             self.fieldsToAttend.clear()
 
-            if self.current_tool == None and len(self.fieldsToAttend) == 0 and self.search == 0:
+                        # Else, if the agent doesn't have a tool and it is next to the "target", it means it reached the search destination
+                        # Just clean the "fieldsToAttend"
+                        elif self.current_tool == None and self.protocol == "Helper-Based protocol":
+                            self.fieldsToAttend.clear()
+
+                        elif self.protocol == "Coordination Cooperative protocol":
+                            neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                                neighbor)
+                            if self.toolVSfield(neighborPassive.machine.current_state.value):
+                                neighborPassive.interact(self)
+                                neighborPassive.taken = 0
+                            self.fieldsToAttend.clear()
+
+            # If the agent didn't get any tool (hence current_tool is None), it means that either there is no tool available for it
+            # or its help is not needed. Therefore, it goes to a random point in the field and updates the states on the way
+            # (Searching for Helper-Based Protocol)
+            if (self.current_tool == None or (self.protocol == "Coordination Cooperative protocol" and self.coordinationCheck == 1)) and len(self.fieldsToAttend) == 0 and self.search == 0:
                 seed(datetime.now())
                 listOfFieldsFromKnowledge = [
                     obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
                 self.fieldsToAttend.append(
                     (1, listOfFieldsFromKnowledge[randint(0, len(listOfFieldsFromKnowledge)-1)]))
+                self.calculatePath(listOfFieldsFromKnowledge[randint(
+                    0, len(listOfFieldsFromKnowledge)-1)])
                 self.search = 1
 
         elif self.protocol == "Simple protocol":
@@ -1120,12 +1218,12 @@ class FarmAgent(Agent):
         super().__init__(unique_id, model)
         self.pos = pos
         self.food = 0
-        self.irrigator = 10
-        self.plow = 10
-        self.sprayer = 10
-        self.wacker = 10
-        self.harvester = 10
-        self.seeder = 10
+        self.irrigator = 7
+        self.plow = 5
+        self.sprayer = 7
+        self.wacker = 7
+        self.harvester = 5
+        self.seeder = 5
 
     def sample_stage(self):
         return

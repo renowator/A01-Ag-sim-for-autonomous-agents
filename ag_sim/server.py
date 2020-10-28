@@ -88,7 +88,7 @@ def ag_sim_portrayal(agent):
         # Tints for sick and weeds states
         sick_tint = "#0043fc"  # Blue
         weeds_tint = "#ff00f2"  # Pink
-        dehydrated_tint = "#49007a" # Purple
+        dehydrated_tint = "#49007a"  # Purple
 
         switcher = {
             # Start state colors
@@ -115,7 +115,7 @@ def ag_sim_portrayal(agent):
             PassiveAgentStateMachine.flowering_sick: ['#fffd73', '#faf743', sick_tint],
             PassiveAgentStateMachine.flowering_weeds: ['#fffd73', '#faf743', weeds_tint],
             PassiveAgentStateMachine.flowering_dry: ['#fffd73', '#faf743', dehydrated_tint],
-            
+
             # Harvestable state colors
             # Orange
             PassiveAgentStateMachine.harvestable: ['#ffd06b', '#ffc240', '#ffb10a'],
@@ -124,7 +124,8 @@ def ag_sim_portrayal(agent):
             PassiveAgentStateMachine.harvestable_dry: ['#ffd06b', '#ffc240', dehydrated_tint],
             # End state colors
             PassiveAgentStateMachine.dead: ['#000000', '#000000', '#000000'],
-            PassiveAgentStateMachine.harvested: ['#FFFFFF', '#FFFFFF', '#FFFFFF']
+            PassiveAgentStateMachine.harvested: [
+                '#FFFFFF', '#FFFFFF', '#FFFFFF']
         }
         color = switcher.get(agent.machine.current_state,  [
                              '#abb6c6', '#abb6c6', '#abb6c6'])
@@ -180,7 +181,7 @@ class ag_sim_legend(TextElement):
             "Harvestable crop": "#ffc240",
             "Infected with weeds": "#ff00f2",
             "Sick": "#0043fc",
-            "Dehydrated" : "#4f1e8f",
+            "Dehydrated": "#4f1e8f",
             "Death crop": "#000000",
             "Harvested crop": "#FFFFFF"
         }
@@ -209,11 +210,11 @@ legend = ag_sim_legend()
 model_params = {
 
     "static_text": UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
-    "active_agents": UserSettableParameter("slider", "Number of active agents", 1, 1, 20),
-    "com_protocol": UserSettableParameter("choice", "Communication protocol", value = "Helper-Based protocol", choices=["Simple protocol", "Helper-Based protocol","Coordination Cooperative protocol"]),
-    
+    "active_agents": UserSettableParameter("slider", "Number of active agents", 1, 1, 24),
+    "com_protocol": UserSettableParameter("choice", "Communication protocol", value="Helper-Based protocol", choices=["Simple protocol", "Helper-Based protocol", "Coordination Cooperative protocol"]),
+
     # Water, sick, and weeds states
-    "max_water_level": UserSettableParameter("number", "A crops maximum water level (in steps)", 50000, 1, 100000),   
+    "max_water_level": UserSettableParameter("number", "A crops maximum water level (in steps)", 50000, 1, 100000),
     "max_steps_dehydrated": UserSettableParameter("number", "Maximum number of steps in a dehydrated state", 500, 1, 100000),
     "max_steps_sick": UserSettableParameter("number", "Maximum number of steps in the sick state", 500, 1, 100000),
     "max_steps_weeds": UserSettableParameter("number", "Maximum number of steps in the weeds state", 500, 1, 100000),
