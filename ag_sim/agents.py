@@ -5,10 +5,14 @@ from queue import PriorityQueue
 import astar
 from copy import deepcopy
 from multiprocessing import Pool
-
+from random import seed
+from random import randint
+from datetime import datetime
 
 # Heuristic needed for movement cost to the goal
-def heuristic(a, b):
+
+
+def distance(a, b):
     v1 = abs(a[0]-b[0])
     if v1 == 1:
         temp = v1 + abs(a[1]-b[1])
@@ -669,6 +673,7 @@ class ActiveAgent(Agent):
         self.stepCount = 0
         self.fieldsToAttend = list()
         self.recalculateHeur = 0
+        self.search = 0
 
     # Add what the agent sees to the knowledgeMap
     def update_perception(self, perceptionRadius=5):
@@ -695,12 +700,39 @@ class ActiveAgent(Agent):
     # Check if the tool is good for the field next to me
     # TODO: Add other tools and other field states
 
+    def heuristic(self, pointOfInterest, distance):
+        value = 0
+        special = 0
+        if pointOfInterest.machine.current_state.value == "start":
+            value += distance
+        elif pointOfInterest.machine.current_state.value == "plowed":
+            value += distance
+        elif pointOfInterest.machine.current_state.value == "seed_dry" or pointOfInterest.machine.current_state.value == "growing_dry" or pointOfInterest.machine.current_state.value == "flowering_dry" or pointOfInterest.machine.current_state.value == "harvestable_dry":
+            value += 1*((pointOfInterest.time_at_current_state + distance) /
+                        pointOfInterest.max_steps_dehydrated)*(1-pointOfInterest.taken)
+            special = 1
+        elif pointOfInterest.machine.current_state.value == "seed_weeds" or pointOfInterest.machine.current_state.value == "growing_weeds" or pointOfInterest.machine.current_state.value == "flowering_weeds" or pointOfInterest.machine.current_state.value == "harvestable_weeds":
+            value += 1*((pointOfInterest.time_at_current_state + distance) /
+                        pointOfInterest.max_steps_weeds)*(1-pointOfInterest.taken)
+            special = 1
+        elif pointOfInterest.machine.current_state.value == "seed_sick" or pointOfInterest.machine.current_state.value == "growing_sick" or pointOfInterest.machine.current_state.value == "flowering_sick" or pointOfInterest.machine.current_state.value == "harvestable_sick":
+            value += 1*((pointOfInterest.time_at_current_state + distance) /
+                        pointOfInterest.max_steps_sick)*(1-pointOfInterest.taken)
+            special = 1
+        elif pointOfInterest.machine.current_state.value == "harvestable":
+            value = distance
+
+        if value > 1 and special == 1:
+            return 999
+        else:
+            return value
+
     def recalculateHeuristics(self):
         if len(self.fieldsToAttend) > 0:
             queue = list()
             for element in self.fieldsToAttend:
                 queue = prioritizeQueue(
-                    queue, (heuristic(element[1].pos, self.pos), element[1]))
+                    queue, (distance(element[1].pos, self.pos), element[1]))
 
             self.fieldsToAttend.clear()
             self.fieldsToAttend = queue
@@ -762,9 +794,9 @@ class ActiveAgent(Agent):
             pointOfInterest = self.model.schedule.getPassiveAgent(
                 obj.unique_id)
             if pointOfInterest.machine.current_state.value == "start":
-                plow += 0.75
+                plow += 0.75*(1-pointOfInterest.taken)
             elif pointOfInterest.machine.current_state.value == "plowed":
-                seeder += 1
+                seeder += 1*(1-pointOfInterest.taken)
             elif pointOfInterest.machine.current_state.value == "seed_dry" or pointOfInterest.machine.current_state.value == "growing_dry" or pointOfInterest.machine.current_state.value == "flowering_dry" or pointOfInterest.machine.current_state.value == "harvestable_dry":
                 irrigator += 1*(pointOfInterest.time_at_current_state /
                                 pointOfInterest.max_steps_dehydrated)*(1-pointOfInterest.taken)
@@ -775,7 +807,7 @@ class ActiveAgent(Agent):
                 sprayer += 1*(pointOfInterest.time_at_current_state /
                               pointOfInterest.max_steps_sick)*(1-pointOfInterest.taken)
             elif pointOfInterest.machine.current_state.value == "harvestable":
-                harvester = 1.5
+                harvester = 1*(1-pointOfInterest.taken)
 
         priority = list()
         priority = prioritizeQueue(priority, (plow, "plow"))
@@ -803,11 +835,11 @@ class ActiveAgent(Agent):
                             obj.unique_id)
                         if self.toolVSfield(pointOfInterest.machine.current_state.value):
                             queue = prioritizeQueue(
-                                queue, (heuristic(pointOfInterest.pos, self.pos), pointOfInterest))
+                                queue, (self.heuristic(pointOfInterest, distance(pointOfInterest.pos, self.pos)), pointOfInterest))
 
                     if len(queue) == 0:
                         queue = prioritizeQueue(
-                            queue, (heuristic(self.model.farmPos, self.pos), self.model.farmObject))
+                            queue, (self.heuristic(self.model.farmObject, distance(self.model.farmPos, self.pos)), self.model.farmObject))
 
                     # Decide which is the closest point you can attend and that is free
                     while queue:
@@ -896,7 +928,7 @@ class ActiveAgent(Agent):
                             obj.unique_id)
                         if self.toolVSfield(pointOfInterest.machine.current_state.value):
                             queue = prioritizeQueue(
-                                queue, (heuristic(pointOfInterest.pos, self.pos), pointOfInterest))
+                                queue, (self.heuristic(pointOfInterest, distance(pointOfInterest.pos, self.pos)), pointOfInterest))
 
                     # Check the status of all agents from the knowledge map
                     while queue:
@@ -951,36 +983,40 @@ class ActiveAgent(Agent):
                 if self.recalculateHeur == 0 and len(self.fieldsToAttend) > 1:
                     self.recalculateHeuristics()
                     self.recalculateHeur = 1
-                neighbors = self.model.grid.get_neighborhood(
-                    self.pos, False, False)
-                for neighbor in neighbors:
-                    neighborAgent = self.model.schedule.getPassiveAgentOnPos(
-                        neighbor)
-                    if isinstance(neighborAgent, PassiveAgent) and self.toolVSfield(neighborAgent.machine.current_state.value):
-                        neighborAgent.interact(self)
-                        neighborAgent.taken = 0
-                    # Get only passive aggents in neighborhood
-                    if len(self.fieldsToAttend) > 1:
-                        for item in self.fieldsToAttend:
-                            if item[1].pos == neighbor:
-                                neighborPassive = self.model.schedule.getPassiveAgentOnPos(
-                                    neighbor)
-                                neighborPassive.interact(self)
-                                neighborPassive.taken = 0
-                                self.fieldsToAttend.remove(
-                                    self.fieldsToAttend[0])
-                                break
-                    elif len(self.fieldsToAttend) == 1:
-                        if self.fieldsToAttend[0][1].pos == neighbor:
-                            # If I am at the farm, change the tool
-                            if self.fieldsToAttend[0][1].pos == self.model.farmObject.pos:
-                                priority = self.calculatePriorityTool()
-                                # print(priority)
-                                temp = len(priority) - 1
-                                self.model.farmObject.return_tool(
-                                    self.current_tool)
-                                self.current_tool = None
-                                while temp >= 0:
+            neighbors = self.model.grid.get_neighborhood(
+                self.pos, False, False)
+            for neighbor in neighbors:
+                neighborAgent = self.model.schedule.getPassiveAgentOnPos(
+                    neighbor)
+                if isinstance(neighborAgent, PassiveAgent) and self.toolVSfield(neighborAgent.machine.current_state.value) and neighborAgent.taken == 0:
+                    neighborAgent.interact(self)
+                    break
+
+                # Get only passive aggents in neighborhood
+                if len(self.fieldsToAttend) > 1:
+                    for item in self.fieldsToAttend:
+                        if item[1].pos == neighbor:
+                            neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                                neighbor)
+                            neighborPassive.interact(self)
+                            neighborPassive.taken = 0
+                            self.fieldsToAttend.remove(
+                                self.fieldsToAttend[0])
+                            break
+
+                elif len(self.fieldsToAttend) == 1:
+                    if self.fieldsToAttend[0][1].pos == neighbor:
+                        # If I am at the farm, change the tool
+                        if self.fieldsToAttend[0][1].pos == self.model.farmObject.pos:
+                            self.search = 0
+                            priority = self.calculatePriorityTool()
+                            # print(priority)
+                            temp = len(priority) - 1
+                            self.model.farmObject.return_tool(
+                                self.current_tool)
+                            self.current_tool = None
+                            while temp >= 0:
+                                if priority[temp][0] != 0:
                                     test = self.model.farmObject.take_tool(
                                         priority[temp][1])
                                     if test == True:
@@ -989,15 +1025,24 @@ class ActiveAgent(Agent):
                                         # print(self.current_tool)
                                         break
 
-                                    temp -= 1
+                                temp -= 1
+                            self.fieldsToAttend.clear()
+                            print(self.current_tool)
+                        # Else, interact with the field
+                        else:
+                            neighborPassive = self.model.schedule.getPassiveAgentOnPos(
+                                neighbor)
+                            neighborPassive.interact(self)
+                            neighborPassive.taken = 0
+                            self.fieldsToAttend.clear()
 
-                            # Else, interact with the field
-                            else:
-                                neighborPassive = self.model.schedule.getPassiveAgentOnPos(
-                                    neighbor)
-                                neighborPassive.interact(self)
-                                neighborPassive.taken = 0
-                                self.fieldsToAttend.clear()
+            if self.current_tool == None and len(self.fieldsToAttend) == 0 and self.search == 0:
+                seed(datetime.now())
+                listOfFieldsFromKnowledge = [
+                    obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
+                self.fieldsToAttend.append(
+                    (1, listOfFieldsFromKnowledge[randint(0, len(listOfFieldsFromKnowledge)-1)]))
+                self.search = 1
 
         elif self.protocol == "Simple protocol":
             neighbors = self.model.grid.get_neighborhood(
