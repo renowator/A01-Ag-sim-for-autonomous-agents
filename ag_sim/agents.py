@@ -667,6 +667,13 @@ class ActiveAgent(Agent):
         # target can be watering, plowing, spraying and to gather or return the needed equipment
         self.targets = None
         self.mode = 'TEST'
+        self.plan = None
+        self.target = None  # This variable is used when a target location is set by the agent
+        self.stepCount = 0
+        self.fieldsToAttend = list()
+        self.recalculateHeur = 0
+        self.search = 0
+
         if self.protocol == "Coordination Cooperative protocol":
             self.coordinationCheck = 0
             if self.unique_id % 6 == 0:
@@ -681,16 +688,11 @@ class ActiveAgent(Agent):
                 self.current_tool = "wacker"
             elif self.unique_id % 6 == 5:
                 self.current_tool = "sprayer"
-        elif self.protocol == "Helper-Based protocol":
+        elif self.protocol == "Helper-Based protocol" or self.protocol == "Simple protocol":
             self.current_tool = 'plow'
-        self.plan = None
-        self.target = None  # This variable is used when a target location is set by the agent
-        self.stepCount = 0
-        self.fieldsToAttend = list()
-        self.recalculateHeur = 0
-        self.search = 0
 
     # Add what the agent sees to the knowledgeMap
+
     def update_perception(self, perceptionRadius=5):
         neighbors = self.model.grid.get_neighborhood(
             self.pos, True, False, perceptionRadius)
@@ -700,7 +702,6 @@ class ActiveAgent(Agent):
                 if isinstance(neighbor_obj[0], PassiveAgent):
                     self.model.knowledgeMap.update(
                         PassiveAgentPerception(neighbor_obj[0]))
-
     # This function is used to execute a move of an agent
 
     def executeMove(self):
@@ -841,7 +842,9 @@ class ActiveAgent(Agent):
                 self.update_perception()
                 self.stepCount += 1
             else:
-                if self.target == None:
+                if len(self.fieldsToAttend) == 0:
+                    self.recalculateHeur = 0
+                    # Get all passiveAgents from the KnowledgeMap
                     listOfFieldsFromKnowledge = [
                         obj for obj in self.model.knowledgeMap.navigationGrid if isinstance(obj, PassiveAgentPerception)]
                     queue = list()
@@ -852,79 +855,33 @@ class ActiveAgent(Agent):
                             queue = prioritizeQueue(
                                 queue, (self.heuristic(pointOfInterest, distance(pointOfInterest.pos, self.pos)), pointOfInterest))
 
-                    if len(queue) == 0:
-                        queue = prioritizeQueue(
-                            queue, (self.heuristic(self.model.farmObject, distance(self.model.farmPos, self.pos)), self.model.farmObject))
-
-                    # Decide which is the closest point you can attend and that is free
+                    # Check the status of all agents from the knowledge map
                     while queue:
-                        possibleTarget = queue.pop(0)
-                        near = list()
+                        possibleTarget = queue[0]
+                        queue.remove(possibleTarget)
 
-                        # In here we calculate all possible points the agent can go
-                        # It depends where the PassiveAgent is located and there are some special cases
-                        # like the line on the right or the top/bottom of each line (as there are 3 spots the agent can go)
-                        if possibleTarget[1] == self.model.farmObject:
-                            self.target = possibleTarget[1].pos
+                        if self.toolVSfield(possibleTarget[1].machine.current_state.value):
+                            # If there are no points to attend in the agent's knowledge, add it to its knowledge
+                            if len(self.fieldsToAttend) == 0:
+                                self.fieldsToAttend.append(
+                                    (possibleTarget[0], possibleTarget[1]))
+                                self.calculatePath(possibleTarget[1])
+                                break
+                            # If there is at least a point to attend in the agent's knowledge, get all points it can attend based on the path the agent is going
+                            # Is checking right and left sides of the path
 
-                            # These are the two possible locations for every field
-                            near.append(
-                                (possibleTarget[1].pos[0]-1, possibleTarget[1].pos[1]))
-                            near.append(
-                                (possibleTarget[1].pos[0]+1, possibleTarget[1].pos[1]))
+                    queue.clear()
+                if len(self.model.knowledgeMap.planAgents[self.unique_id]) == 0:
+                    # If there is at least a field it can attend with the current tool, go there.
+                    if len(self.fieldsToAttend) > 0:
+                        moveTo = self.fieldsToAttend[0]
+                        self.calculatePath(moveTo[1])
 
-                            # If there is a top or bottom field, there is also an alternitve point it can go
-                            if possibleTarget[1].pos[1] == 1:
-                                near.append((possibleTarget[1].pos[0], 0))
-                            elif possibleTarget[1].pos[1] == 48:
-                                near.append((possibleTarget[1].pos[0], 49))
-
-                            # Calculate the shortest path based on agents point and the other possible points
-                            steps = astar.solve(self.pos, near)
-
-                            temp = 0
-                            if steps:
-                                for step in steps:
-                                    temp = temp + 1
-                                    new_plan = ActiveAgentPlanning(
-                                        self, step, temp)
-                                    self.model.knowledgeMap.update(new_plan)
-                                    self.model.schedule.add(new_plan)
-
-                            near.clear()
-                            queue.clear()
-                            break
-                        elif possibleTarget[1].taken == 0 and self.toolVSfield(possibleTarget[1].machine.current_state.value):
-                            possibleTarget[1].taken = 1
-                            self.target = possibleTarget[1].pos
-
-                            # These are the two possible locations for every field
-                            near.append(
-                                (possibleTarget[1].pos[0]-1, possibleTarget[1].pos[1]))
-                            near.append(
-                                (possibleTarget[1].pos[0]+1, possibleTarget[1].pos[1]))
-
-                            # If there is a top or bottom field, there is also an alternitve point it can go
-                            if possibleTarget[1].pos[1] == 1:
-                                near.append((possibleTarget[1].pos[0], 0))
-                            elif possibleTarget[1].pos[1] == 48:
-                                near.append((possibleTarget[1].pos[0], 49))
-
-                            # Calculate the shortest path based on agents point and the other possible points
-                            steps = astar.solve(self.pos, near)
-
-                            temp = 0
-                            if steps:
-                                for step in steps:
-                                    temp = temp + 1
-                                    new_plan = ActiveAgentPlanning(
-                                        self, step, temp)
-                                    self.model.knowledgeMap.update(new_plan)
-                                    self.model.schedule.add(new_plan)
-
-                            near.clear()
-                            queue.clear()
-                            break
+                    # Else, change the tool
+                    else:
+                        self.fieldsToAttend.append(
+                            tuple((0, self.model.farmObject)))
+                        self.calculatePath(self.model.farmObject)
 
         elif self.protocol == "Helper-Based protocol":
             # Safety perception check
@@ -1037,7 +994,7 @@ class ActiveAgent(Agent):
         # Then update the perception of the agent(s)
         self.update_perception()
 
-        if self.protocol == "Helper-Based protocol" or self.protocol == "Coordination Cooperative protocol":
+        if self.protocol == "Helper-Based protocol" or self.protocol == "Coordination Cooperative protocol" or self.protocol == "Simple protocol":
             # Recalculate all heuristics after I have reached the line with the first point of interest (ONLY ONCE until fieldsToAttend is empty again)
             if len(self.fieldsToAttend) > 0 and self.pos[0] == self.fieldsToAttend[0][1].pos[0]-1 and self.recalculateHeur == 0 and len(self.fieldsToAttend) > 1:
                 self.recalculateHeuristics()
@@ -1051,7 +1008,7 @@ class ActiveAgent(Agent):
                     neighbor)
 
                 # If the neighboring block can be attended and is not taken, interact
-                if isinstance(neighborAgent, PassiveAgent) and self.toolVSfield(neighborAgent.machine.current_state.value) and neighborAgent.taken == 0:
+                if isinstance(neighborAgent, PassiveAgent) and self.toolVSfield(neighborAgent.machine.current_state.value) and (neighborAgent.taken == 0 or self.protocol == "Simple protocol"):
                     neighborAgent.interact(self)
 
                 # Also, if the agent has to attend fields, check if the adjacent field has to be attended by this agent
@@ -1071,7 +1028,7 @@ class ActiveAgent(Agent):
                     if self.fieldsToAttend[0][1].pos == neighbor:
 
                         # If the field to attend is the farm, and the agent is next to it, change the tool
-                        if self.fieldsToAttend[0][1].pos == self.model.farmObject.pos and self.protocol == "Helper-Based protocol":
+                        if self.fieldsToAttend[0][1].pos == self.model.farmObject.pos and (self.protocol == "Helper-Based protocol" or self.protocol == "Simple protocol"):
 
                             # Reset search (used for Helper Based-Protocol)
                             self.search = 0
@@ -1109,7 +1066,7 @@ class ActiveAgent(Agent):
                             self.fieldsToAttend.clear()
 
                         # Else, it means that the field to attend is not the farm, hence interact with it (if it has a tool)
-                        elif self.current_tool != None and self.protocol == "Helper-Based protocol":
+                        elif self.current_tool != None and (self.protocol == "Helper-Based protocol" or self.protocol == "Simple protocol"):
                             neighborPassive = self.model.schedule.getPassiveAgentOnPos(
                                 neighbor)
                             neighborPassive.interact(self)
@@ -1118,7 +1075,7 @@ class ActiveAgent(Agent):
 
                         # Else, if the agent doesn't have a tool and it is next to the "target", it means it reached the search destination
                         # Just clean the "fieldsToAttend"
-                        elif self.current_tool == None and self.protocol == "Helper-Based protocol":
+                        elif self.current_tool == None and (self.protocol == "Helper-Based protocol" or self.protocol == "Simple protocol"):
                             self.fieldsToAttend.clear()
 
                         elif self.protocol == "Coordination Cooperative protocol":
@@ -1142,15 +1099,6 @@ class ActiveAgent(Agent):
                     0, len(listOfFieldsFromKnowledge)-1)])
                 self.search = 1
 
-        elif self.protocol == "Simple protocol":
-            neighbors = self.model.grid.get_neighborhood(
-                self.pos, False, False)
-            for neighbor in neighbors:
-                neighborPassive = self.model.schedule.getPassiveAgentOnPos(
-                    neighbor)
-                if isinstance(neighborPassive, PassiveAgent) and self.toolVSfield(neighborPassive.machine.current_state.value):
-                    neighborPassive.interact(self)
-                    break
         # And finally update the perception of the agent(s) once more to check in the knowledgeMap that the action has been performed
         self.update_perception()
 
