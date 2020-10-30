@@ -184,16 +184,16 @@ class AgSimulator(Model):
         # Specify the data that has to be collected during the run
         self.datacollector = DataCollector(
             model_reporters={
-                "harvest_score" : self.get_harvest_score,
-                "total_steps_dehydrated" : self.get_total_steps_dehydrated,
-                "total_steps_sick" : self.get_total_steps_sick,
-                "total_steps_weeds" : self.get_total_steps_weeds
+                "harvest_score": self.get_harvest_score,
+                "total_steps_dehydrated": self.get_total_steps_dehydrated,
+                "total_steps_sick": self.get_total_steps_sick,
+                "total_steps_weeds": self.get_total_steps_weeds
             },
             agent_reporters={
                 "X": lambda a: a.pos[0],
                 "Y": lambda a: a.pos[1]
             }
-            )
+        )
 
         # TODO: Create and object to serve as common knowledge base for active agents
         self.knowledgeMap = AgentKnowledgeMap(self.height, self.width, self)
@@ -233,38 +233,37 @@ class AgSimulator(Model):
         self.datacollector.collect(self)
 
         # Test prints
-        print("I just made a step!")
         # print("Harvest score = " + str(self.harvest_score))
         # print("Time dehydrated = " + str(self.total_steps_dehydrated))
         # print("Time sick = " + str(self.total_steps_sick))
         # print("Time weeds = " + str(self.total_steps_weeds))
 
-
     # Functions for harvest score
+
     def increase_harvest_score(self):
         self.harvest_score += 1
 
     def get_harvest_score(self, model):
         return model.harvest_score
 
-
     # Functions for total steps dehydrated
+
     def increase_total_steps_dehydrated(self, steps):
         self.total_steps_dehydrated += steps
-    
+
     def get_total_steps_dehydrated(self, model):
         return model.total_steps_dehydrated
 
-
     # Functions for total steps sick
+
     def increase_total_steps_sick(self, steps):
         self.total_steps_sick += steps
 
     def get_total_steps_sick(self, model):
         return model.total_steps_sick
 
-
     # Functions for total steps weeds
+
     def increase_total_steps_weeds(self, steps):
         self.total_steps_weeds += steps
 
@@ -274,9 +273,7 @@ class AgSimulator(Model):
     '''
     *** run_model defines the end condition for simulation and overwrites Model.run_model
     '''
-    
+
     def run_model(self, step_count=4800):
         for i in range(step_count):
             self.step()
-
-

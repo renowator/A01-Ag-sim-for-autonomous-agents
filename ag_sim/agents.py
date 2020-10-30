@@ -916,8 +916,9 @@ class ActiveAgent(Agent):
                                 self.calculatePath(possibleTarget[1])
                             # If there is at least a point to attend in the agent's knowledge, get all points it can attend based on the path the agent is going
                             # Is checking right and left sides of the path
-                            elif len(self.fieldsToAttend) != 0 and (possibleTarget[1].pos[0] == self.model.knowledgeMap.planAgents[self.unique_id][len(self.model.knowledgeMap.planAgents[self.unique_id])-1].pos[0]-1 or
-                                                                    possibleTarget[1].pos[0] == self.model.knowledgeMap.planAgents[self.unique_id][len(self.model.knowledgeMap.planAgents[self.unique_id])-1].pos[0]+1):
+
+                            elif len(self.fieldsToAttend) != 0 and len(self.model.knowledgeMap.planAgents[self.unique_id]) > 0 and (possibleTarget[1].pos[0] == self.model.knowledgeMap.planAgents[self.unique_id][len(self.model.knowledgeMap.planAgents[self.unique_id])-1].pos[0]-1 or
+                                                                                                                                    possibleTarget[1].pos[0] == self.model.knowledgeMap.planAgents[self.unique_id][len(self.model.knowledgeMap.planAgents[self.unique_id])-1].pos[0]+1):
                                 possibleTarget[1].taken = 1
                                 self.fieldsToAttend = prioritizeQueue(
                                     self.fieldsToAttend, (possibleTarget[0], possibleTarget[1]))
