@@ -21,6 +21,15 @@ import matplotlib.pyplot as plt
 def get_harvest_score(model):
     return model.harvest_score
 
+def get_total_steps_dehydrated( model):
+    return model.total_steps_dehydrated
+
+def get_total_steps_sick(model):
+    return model.total_steps_sick
+
+def get_total_steps_weeds(model):
+    return model.total_steps_weeds
+
 
 '''
 Function set_variable_params sets all the model parameters that have to be varied in the experiments. 
@@ -30,7 +39,7 @@ Change these parameters to perform different experiments.
 
 def set_variable_params():
     variable_params = {
-        "active_agents": range(24, 24)
+        "active_agents": range(22, 25)
     }
     return variable_params
 
@@ -44,7 +53,7 @@ Parameters are only set here if they have not been set as a variable parameter.
 def set_fixed_params():
 
     # Quick params for if you want no differences between states
-    steps_between_states = 1000
+    steps_between_states = 20
     max_steps_bad_state = 500
     sick_prob = 0.0003
     weeds_prob = 0.0003
@@ -81,7 +90,7 @@ def set_fixed_params():
         # Harvestable crop parameters
         "harvestable_sick_probability": sick_prob,
         "harvestable_weeds_probability": weeds_prob,
-        "steps_harvestable_to_dead": steps_between_states,
+        "steps_harvestable_to_dead": max_steps_bad_state,
     }
     return fixed_params
 
@@ -97,9 +106,12 @@ batch_run = BatchRunner(AgSimulator,
                         variable_params,
                         fixed_params,
                         iterations=1,
-                        max_steps=5000,
+                        max_steps=1500,
                         model_reporters={
                             "harvest_score": get_harvest_score,
+                            "total_steps_dehydrated": get_total_steps_dehydrated,
+                            "total_steps_sick": get_total_steps_sick,
+                            "total_steps_weeds": get_total_steps_weeds,
                         },
                         agent_reporters={"pos": "pos"}
                         )
@@ -112,12 +124,10 @@ batch_run.run_all()
 # agent_data = batch_run.get_agent_vars_dataframe()
 # print(agent_data.head())
 
-# %%
 # Get all model data
 model_data = batch_run.get_model_vars_dataframe()
-interesting_columns = ["com_protocol", "active_agents", "harvest_score"]
+interesting_columns = ["com_protocol", "active_agents", "harvest_score", "total_steps_dehydrated", "total_steps_sick", "total_steps_weeds"]
 print(model_data[interesting_columns])
-
 
 # plt.scatter(model_data.active_agents, model_data.harvest_score)
 

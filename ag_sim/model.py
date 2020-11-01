@@ -276,4 +276,6 @@ class AgSimulator(Model):
 
     def run_model(self, step_count=4800):
         for i in range(step_count):
+            if i % 100 == 0:
+                print("Step " + str(i))
             self.step()
