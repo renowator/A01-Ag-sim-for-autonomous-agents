@@ -7,7 +7,10 @@ with the model.
 from collections import defaultdict
 from ag_sim.model import AgSimulator
 from ag_sim.agents import PassiveAgent, ActiveAgent, PassiveAgentPerception, ActiveAgentPlanning, PassiveAgentStateMachine, FarmAgent
-
+import pandas as pd
+import os
+import numpy as np
+import matplotlib.pyplot as plt
 '''
 Function set_fixed_params sets all the fixed model parameters for the experiments. 
 Parameters are only set here if they have not been set as a variable parameter.
@@ -24,7 +27,7 @@ def set_model_params():
     # General parameters
     "running_condition" : True,                 # Condition for when the model should be shut of (True = no condition)
     "active_agents": 24,                       # Number of active agents ("farming robots")
-    "com_protocol": "Helper-Based protocol",   # Cooperation protocol used between agents
+    "com_protocol": "Simple protocol",   # Cooperation protocol used between agents: Simple protocol, Helper-Based protocol, Coordination Cooperative protocol
 
     "max_water_level" : 50000,
     "max_steps_dehydrated": max_steps_bad_state,
@@ -56,6 +59,7 @@ def set_model_params():
 '''
 Function run_experiment runs a single experiment for a given number of iterations
 '''
+model_results = []
 def run_experiment(num_iterations, max_steps, exp_number=0):
 
     # Set this experiment's model parameters and create the model
@@ -69,14 +73,43 @@ def run_experiment(num_iterations, max_steps, exp_number=0):
         model.run_model(max_steps) # Run the model for at most max_steps
 
         agent_coords = model.datacollector.get_agent_vars_dataframe()
-        model_results = model.datacollector.get_model_vars_dataframe()
-        print(model_results)
+        model_results.append(model.datacollector.get_model_vars_dataframe())\
 
     # TODO: Return the collected data from this experiment
-    return
+    return model_results
+
+
 
 # Use the line below to run a single experiment
-run_experiment(1, 1000)
+output = run_experiment(10, 1000) #comment this out when loading a outfile_ file to only plot.
+
+#you have to use these two line or it given an error 
+np.save('outfile', output)
+output1 =  np.load('outfile.npy') # there are 3 outfile_ files for the three protocols which you can load
+
+
+results = [[0 for i in range(4)] for j in range(1000)]
+for i in range(10):
+    for j in range(1000):
+        if j == 0:
+            pass
+        else:
+            results[j][0] = results[j][0] + output1[i][j][0]
+            results[j][1] = results[j][1] + output1[i][j][1]
+            results[j][2] = results[j][2] + output1[i][j][2]
+            results[j][3] = results[j][3] + output1[i][j][3]
+
+for i in range(4):
+    for j in range(1000):
+        results[j][i] = results[j][i]/10
+
+df = pd.DataFrame(data=results,  columns=["Harvest_score", "Steps_dehydrated","Steps_sick", "Steps_weed"])
+
+df.plot()	
+plt.show()
+
+
+
 #%%
 
 
