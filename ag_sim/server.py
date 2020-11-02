@@ -210,29 +210,29 @@ legend = ag_sim_legend()
 model_params = {
 
     "static_text": UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
-    "active_agents": UserSettableParameter("slider", "Number of active agents", 1, 1, 24),
+    "active_agents": UserSettableParameter("slider", "Number of active agents", 6, 6, 30),
     "com_protocol": UserSettableParameter("choice", "Communication protocol", value="Helper-Based protocol", choices=["Simple protocol", "Helper-Based protocol", "Coordination Cooperative protocol"]),
 
     # Water, sick, and weeds states
-    "max_water_level": UserSettableParameter("number", "A crops maximum water level (in steps)", 50000, 1, 100000),
+    "max_water_level": UserSettableParameter("number", "A crops maximum water level (in steps)", 750, 1, 100000),
     "max_steps_dehydrated": UserSettableParameter("number", "Maximum number of steps in a dehydrated state", 500, 1, 100000),
     "max_steps_sick": UserSettableParameter("number", "Maximum number of steps in the sick state", 500, 1, 100000),
     "max_steps_weeds": UserSettableParameter("number", "Maximum number of steps in the weeds state", 500, 1, 100000),
     # Seed crop parameters
-    "seed_sick_probability": UserSettableParameter("number", "Probability of seed getting sick", 0.001, 0, 1),
-    "seed_weeds_probability": UserSettableParameter("number", "Probability of seed getting weeds", 0.0001, 0, 1),
+    "seed_sick_probability": UserSettableParameter("number", "Probability of seed getting sick", 0.0005, 0, 1),
+    "seed_weeds_probability": UserSettableParameter("number", "Probability of seed getting weeds", 0.0005, 0, 1),
     "steps_seed_to_growing": UserSettableParameter("number", "Steps between a crop's seed and growing state", 1000, 1, 100000),
     # Growing crop parameters
-    "growing_sick_probability": UserSettableParameter("number", "Probability of growing getting sick", 0.001, 0, 1),
-    "growing_weeds_probability": UserSettableParameter("number", "Probability of growing getting weeds", 0.0001, 0, 1),
+    "growing_sick_probability": UserSettableParameter("number", "Probability of growing getting sick", 0.0005, 0, 1),
+    "growing_weeds_probability": UserSettableParameter("number", "Probability of growing getting weeds", 0.0005, 0, 1),
     "steps_growing_to_flowering": UserSettableParameter("number", "Steps between a crop's growing and flowering state", 1000, 1, 100000),
     # Flowering crop parameters
-    "flowering_sick_probability": UserSettableParameter("number", "Probability of flowering getting sick", 0.001, 0, 1),
-    "flowering_weeds_probability": UserSettableParameter("number", "Probability of flowering getting weeds", 0.0001, 0, 1),
+    "flowering_sick_probability": UserSettableParameter("number", "Probability of flowering getting sick", 0.0005, 0, 1),
+    "flowering_weeds_probability": UserSettableParameter("number", "Probability of flowering getting weeds", 0.0005, 0, 1),
     "steps_flowering_to_harvestable": UserSettableParameter("number", "Steps between a crop's flowering and harvestable state", 1000, 1, 100000),
     # Harvestable crop parameters
-    "harvestable_sick_probability": UserSettableParameter("number", "Probability of harvestable getting sick", 0.001, 0, 1),
-    "harvestable_weeds_probability": UserSettableParameter("number", "Probability of harvestable getting weeds", 0.0001, 0, 1),
+    "harvestable_sick_probability": UserSettableParameter("number", "Probability of harvestable getting sick", 0.0005, 0, 1),
+    "harvestable_weeds_probability": UserSettableParameter("number", "Probability of harvestable getting weeds", 0.0005, 0, 1),
     "steps_harvestable_to_dead": UserSettableParameter("number", "Maximum number of steps that a crop can be in the harvestable state before dying", 500, 1, 100000),
 }
 

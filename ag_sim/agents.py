@@ -337,13 +337,13 @@ class PassiveAgent(Agent):
         if self.machine.current_state == self.machine.seed_dry:
             self.machine.dry_seed_recovery()
         # growing
-        if self.machine.current_state == self.machine.growing_weeds:
+        if self.machine.current_state == self.machine.growing_dry:
             self.machine.dry_growing_recovery()
         # Flowering
-        if self.machine.current_state == self.machine.flowering_weeds:
+        if self.machine.current_state == self.machine.flowering_dry:
             self.machine.dry_flowering_recovery()
         # Harvestable
-        if self.machine.current_state == self.machine.harvestable_weeds:
+        if self.machine.current_state == self.machine.harvestable_dry:
             self.machine.dry_harvestable_recovery()
 
     '''
