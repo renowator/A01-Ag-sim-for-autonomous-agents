@@ -1167,12 +1167,12 @@ class FarmAgent(Agent):
         super().__init__(unique_id, model)
         self.pos = pos
         self.food = 0
-        self.irrigator = 7
-        self.plow = 5
-        self.sprayer = 7
-        self.wacker = 7
-        self.harvester = 5
-        self.seeder = 5
+        self.irrigator = 100
+        self.plow = 100
+        self.sprayer = 100
+        self.wacker = 100
+        self.harvester = 100
+        self.seeder = 100
 
     def sample_stage(self):
         return
