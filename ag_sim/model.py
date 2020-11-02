@@ -202,7 +202,7 @@ class AgSimulator(Model):
         # Add the active agents (farming robots)
         for i in range(self.active_agents):
             agent = ActiveAgent(self.next_id(), (0, i), self, **model_params)
-            self.grid.place_agent(agent, (0, i))
+            self.grid.place_agent(agent, (48, 48-i))
             self.schedule.add(agent)
 
         # Add the passive agents (land, crops)
