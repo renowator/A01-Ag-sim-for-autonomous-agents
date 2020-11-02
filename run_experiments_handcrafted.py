@@ -18,18 +18,18 @@ Parameters are only set here if they have not been set as a variable parameter.
 def set_model_params():
 
     # Quick params for if you want no differences between states
-    steps_between_states = 20
+    steps_between_states = 1000
     max_steps_bad_state = 500
-    sick_prob = 0.0003
-    weeds_prob = 0.0003
+    sick_prob = 0.0005
+    weeds_prob = 0.0005
 
     fixed_params = {
     # General parameters
     "running_condition" : True,                 # Condition for when the model should be shut of (True = no condition)
-    "active_agents": 24,                       # Number of active agents ("farming robots")
+    "active_agents": 18,                       # Number of active agents ("farming robots")
     "com_protocol": "Simple protocol",   # Cooperation protocol used between agents: Simple protocol, Helper-Based protocol, Coordination Cooperative protocol
 
-    "max_water_level" : 50000,
+    "max_water_level" : 750,
     "max_steps_dehydrated": max_steps_bad_state,
     "max_steps_sick" : max_steps_bad_state,
     "max_steps_weeds" : max_steps_bad_state,
@@ -73,7 +73,7 @@ def run_experiment(num_iterations, max_steps, exp_number=0):
         model.run_model(max_steps) # Run the model for at most max_steps
 
         agent_coords = model.datacollector.get_agent_vars_dataframe()
-        model_results.append(model.datacollector.get_model_vars_dataframe())\
+        model_results.append(model.datacollector.get_model_vars_dataframe())
 
     # TODO: Return the collected data from this experiment
     return model_results
@@ -81,16 +81,16 @@ def run_experiment(num_iterations, max_steps, exp_number=0):
 
 
 # Use the line below to run a single experiment
-output = run_experiment(10, 1000) #comment this out when loading a outfile_ file to only plot.
+output = run_experiment(10, 6500) #comment this out when loading a outfile_ file to only plot.
 
 #you have to use these two line or it given an error 
 np.save('outfile', output)
 output1 =  np.load('outfile.npy') # there are 3 outfile_ files for the three protocols which you can load
 
 
-results = [[0 for i in range(4)] for j in range(1000)]
+results = [[0 for i in range(4)] for j in range(6500)]
 for i in range(10):
-    for j in range(1000):
+    for j in range(6500):
         if j == 0:
             pass
         else:
@@ -100,10 +100,12 @@ for i in range(10):
             results[j][3] = results[j][3] + output1[i][j][3]
 
 for i in range(4):
-    for j in range(1000):
+    for j in range(6500):
         results[j][i] = results[j][i]/10
 
 df = pd.DataFrame(data=results,  columns=["Harvest_score", "Steps_dehydrated","Steps_sick", "Steps_weed"])
+
+df.to_pickle('simple_18')
 
 df.plot()	
 plt.show()
