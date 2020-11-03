@@ -26,9 +26,8 @@ def set_model_params():
     fixed_params = {
     # General parameters
     "running_condition" : True,                 # Condition for when the model should be shut of (True = no condition)
-    "active_agents": 18,                       # Number of active agents ("farming robots")
-    "com_protocol": "Simple protocol",   # Cooperation protocol used between agents: Simple protocol, Helper-Based protocol, Coordination Cooperative protocol
-
+    "active_agents": 12,                       # Number of active agents ("farming robots")
+    "com_protocol": "Coordination Cooperative protocol",   # Cooperation protocol used between agents: Simple protocol, Helper-Based protocol, Coordination Cooperative protocol
     "max_water_level" : 750,
     "max_steps_dehydrated": max_steps_bad_state,
     "max_steps_sick" : max_steps_bad_state,
@@ -79,7 +78,6 @@ def run_experiment(num_iterations, max_steps, exp_number=0):
     return model_results
 
 
-
 # Use the line below to run a single experiment
 output = run_experiment(10, 6500) #comment this out when loading a outfile_ file to only plot.
 
@@ -105,10 +103,10 @@ for i in range(4):
 
 df = pd.DataFrame(data=results,  columns=["Harvest_score", "Steps_dehydrated","Steps_sick", "Steps_weed"])
 
-df.to_pickle('simple_18')
+df.to_pickle('ccp_12')
 
-df.plot()	
-plt.show()
+# df.plot()	
+    # plt.show()
 
 
 
