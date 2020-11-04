@@ -209,7 +209,7 @@ legend = ag_sim_legend()
 # The parameters that can be changed in the browser are defined here
 model_params = {
 
-    "static_text": UserSettableParameter('static_text', value="Shown below are all settable agent parameters."),
+    "static_text": UserSettableParameter('static_text', value="<b>About</b><br>Shown below are all settable agent parameters. The legend shown on the right pertains only to the first map, which shows the position and states of all agents. The second map represents the knowledgemap of the active agents. "),
     "active_agents": UserSettableParameter("slider", "Number of active agents", 6, 6, 30),
     "com_protocol": UserSettableParameter("choice", "Communication protocol", value="Helper-Based protocol", choices=["Simple protocol", "Helper-Based protocol", "Coordination Cooperative protocol"]),
 
