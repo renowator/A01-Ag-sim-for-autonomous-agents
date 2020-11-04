@@ -47,3 +47,14 @@ Then open your browser to [http://127.0.0.1:8521/](http://127.0.0.1:8521/) and p
 * **plotter.py** - function used to plot all the figures from the report
 * **run.py** - run this file if you want to run the simulation
 * **run_experiments.py** and **run_experiments_handcrafted.py** - are used for running the models for a number of epochs, given some parameters (much faster than running through run.py)
+
+## About
+
+When running the simultion through run.py file, there are a couple elements shown.
+
+* On the left side, there are all the settable parameters for the simulation
+* In the middle, there are two maps showing up:
+    * the top one is the actual simulation
+    * the bottom one is the knowledgeMap, so that the user can see what the agents are "thinking"
+
+If you want to run the model using different parameters, you need to set those and then press on "Reset" botton. That way, the new parameters are initialized. The parameters cannot be modified during the simulation. Only through the Reset button this can be done.
