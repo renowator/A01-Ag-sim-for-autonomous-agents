@@ -12,8 +12,6 @@ import numpy
                                         Tracks all the objects seen by ActiveAgents
 *** AgentKnowledgeMap.planGrid:
                                         Tracks the plans for ActiveAgents
-+++ AgentKnowledgeMap.targetGrid:
-                                        Tracks the targets using AgentKnowledgeMap.navigationGrid
 
 
 *** AgentKnowledgeMap.getGridStateAtStep(step):
@@ -30,7 +28,6 @@ class AgentKnowledgeMap():
        Actions:
                - Construct navigationGrid
                - Construct planGrid
-               + Construct taskGrid
                - Create agent dictionaries
     '''
 
@@ -225,18 +222,11 @@ class AgSimulator(Model):
 
     '''
     *** step defines how the model behaves each step and overwrites Model.step
-    +++ For more visualization information, it should probably be obtained here
     '''
 
     def step(self):
         self.schedule.step()
         self.datacollector.collect(self)
-
-        # Test prints
-        # print("Harvest score = " + str(self.harvest_score))
-        # print("Time dehydrated = " + str(self.total_steps_dehydrated))
-        # print("Time sick = " + str(self.total_steps_sick))
-        # print("Time weeds = " + str(self.total_steps_weeds))
 
     # Functions for harvest score
 

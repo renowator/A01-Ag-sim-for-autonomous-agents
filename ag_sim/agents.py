@@ -628,15 +628,7 @@ class PassiveAgentPerception(Agent):
 
 '''
 *** ActiveAgent represents the robotic agent that operates on the farm
-*** Currently sample_stage is used to test functionality of the rest of the project
-
-+++ Implement Perception in passive stage
-+++ Obtain targets from AgentKnowledgeMap.taskGrid
-+++ Attach A* algorithm for finding distance to tasks
-+++ Implement Object Sorting Task in passive stage
-+++ Record the plan and update AgentKnowledgeMap.navigationGrid in passive stage
-+++ Execute the plan and interact with PassiveObjects in active stage
-
+*** 
 '''
 
 
@@ -664,11 +656,7 @@ class ActiveAgent(Agent):
         self.pos = pos
         self.agent_type = 'ACTIVE'
         self.protocol = model_params['com_protocol']
-        # target can be watering, plowing, spraying and to gather or return the needed equipment
-        self.targets = None
-        self.mode = 'TEST'
-        self.plan = None
-        self.target = None  # This variable is used when a target location is set by the agent
+        self.target = None
         self.stepCount = 0
         self.fieldsToAttend = list()
         self.recalculateHeur = 0
@@ -713,8 +701,8 @@ class ActiveAgent(Agent):
         else:
             self.target = None
 
-    # Check if the tool is good for the field next to me
-    # TODO: Add other tools and other field states
+    # This function calculates the heuristic based on the distance of the field to the agent (calculated using A*)
+    # and based on the field's state
 
     def heuristic(self, pointOfInterest, distance):
         value = 0
@@ -743,6 +731,8 @@ class ActiveAgent(Agent):
         else:
             return value
 
+    # Recalculate the heuristic based on current items to attend
+
     def recalculateHeuristics(self):
         if len(self.fieldsToAttend) > 0:
             queue = list()
@@ -752,6 +742,8 @@ class ActiveAgent(Agent):
 
             self.fieldsToAttend.clear()
             self.fieldsToAttend = queue
+
+    # Check if the tool is good for the field adjacent to the agent
 
     def toolVSfield(self, fieldState):
         if self.current_tool == "plow" and fieldState == "start":
@@ -767,6 +759,10 @@ class ActiveAgent(Agent):
         elif self.current_tool == "harvester" and fieldState == "harvestable":
             return True
         return False
+
+    # This calculates the path from the agent to the field
+    # There are multiple points from which an agent can interact with the field
+    # This calculates the shortest path based on all possible points
 
     def calculatePath(self, moveTo):
         near = list()
@@ -794,6 +790,8 @@ class ActiveAgent(Agent):
                 self.model.knowledgeMap.update(new_plan)
                 self.model.schedule.add(new_plan)
         near.clear()
+
+    # This functions calculates the priority of the tools
 
     def calculatePriorityTool(self):
         irrigator = 0
@@ -1127,34 +1125,9 @@ class ActiveAgentPlanning(Agent):
             self.model.knowledgeMap.planAgents[self.unique_id].remove(self)
 
 
-# this function should be inserted somewhere, where 'cell' is a neighbouring cell of an active agent
-# 'self.' will be the active agent
-
-# if isinstance(cell, FarmAgent) and self.current_tool != None:
-#     if self.target == 'get_plow':
-#         if cell.interact(self.target, None):
-#             self.current_tool = 'plow'
-#         else:
-#             None #there is no tool available so change plans
-#     elif self.target == 'get_irrigator':
-#         if cell.interact(self.target, None):
-#             self.current_tool = 'irrigator'
-#         else:
-#             None #there is no tool available so change plans
-#     elif self.target == 'get_spray':
-#         if cell.interact(self.target, None):
-#             self.current_tool = 'spray'
-#         else:
-#             None #there is no tool available so change plans
-#     elif self.target == 'return_tool':
-#         cell.interact(self.target, self.current_tool)
-#         self.current_tool = None
-
-
 '''
 The FarmAgent function will be the starting point for the active agents
 and will be used as the location where active agents can switch their tools.
----> In the current implementation, this function is not yet used <---
 '''
 
 
@@ -1231,9 +1204,6 @@ class FarmAgent(Agent):
         elif argmax == 5:  # Harvester
             self.harvester -= 1
             agent.current_tool = "harvester"
-        # print(agent.unique_id)
-        # print("Now has")
-        # print(agent.current_tool)
 
     def interact2(self, target, tool):  # for the taking and returning of farm equipment
         if tool != None:
