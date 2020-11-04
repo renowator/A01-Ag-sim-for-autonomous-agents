@@ -2,6 +2,7 @@ from collections import defaultdict
 from mesa.time import *
 from ag_sim.agents import ActiveAgent, ActiveAgentPlanning
 
+
 class ActivePassiveAgentActivation(SimultaneousActivation):
 
     def __init__(self, model):
